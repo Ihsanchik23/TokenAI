@@ -1,0 +1,19 @@
+import Image from "next/image";
+import Link from "next/link";
+import { formatCoursePrice, getCourseCoverUrl } from "@/lib/course-utils";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function CoursesPage({ searchParams }: { searchParams: Promise<{ q?: string; level?: string; access?: string; topic?: string; sort?: string }> }) {
+  const filters = await searchParams; const supabase = await createClient();
+  const { data: topics } = await supabase.from("topics").select("id,name,slug").order("name");
+  let ids: string[] | null = null;
+  if (filters.topic) { const topic = topics?.find((item) => item.slug === filters.topic); if (topic) { const { data } = await supabase.from("course_topics").select("course_id").eq("topic_id", topic.id); ids = (data ?? []).map((row) => row.course_id); } }
+  let query = supabase.from("courses").select("id,slug,title,short_description,cover_path,access_type,price_amount,currency,level,estimated_minutes,created_at,course_topics(topics(name,slug)),course_instructors(profiles(display_name,username))").eq("status", "published");
+  if (filters.q?.trim()) query = query.ilike("title", `%${filters.q.trim()}%`);
+  if (["beginner", "intermediate", "advanced"].includes(filters.level ?? "")) query = query.eq("level", filters.level!);
+  if (["free", "paid", "private"].includes(filters.access ?? "")) query = query.eq("access_type", filters.access!);
+  if (ids) query = ids.length ? query.in("id", ids) : query.eq("id", "00000000-0000-0000-0000-000000000000");
+  query = filters.sort === "title" ? query.order("title") : query.order("created_at", { ascending: false });
+  const { data: courses } = await query;
+  return <main className="page-shell stack roomy"><header className="stack compact"><p className="eyebrow">Каталог TokenAI</p><h1>Практические AI-курсы</h1><p className="hero-text">Выберите направление, уровень и формат доступа.</p></header><form className="card catalog-filters"><input name="q" placeholder="Найти курс" defaultValue={filters.q} /><select name="topic" defaultValue={filters.topic}><option value="">Все темы</option>{topics?.map((topic) => <option value={topic.slug} key={topic.id}>{topic.name}</option>)}</select><select name="level" defaultValue={filters.level}><option value="">Все уровни</option><option value="beginner">Начальный</option><option value="intermediate">Средний</option><option value="advanced">Продвинутый</option></select><select name="access" defaultValue={filters.access}><option value="">Любой доступ</option><option value="free">Бесплатный</option><option value="paid">Платный</option><option value="private">Закрытый</option></select><select name="sort" defaultValue={filters.sort}><option value="newest">Сначала новые</option><option value="title">По названию</option></select><button className="button">Применить</button></form><div className="course-grid">{courses?.length ? courses.map((course) => { const cover = getCourseCoverUrl(course.cover_path); return <article className="course-card" key={course.id}>{cover ? <Image src={cover} alt="" width={640} height={360} /> : <div className="cover-placeholder">TokenAI</div>}<div className="stack card-body"><div className="tag-list">{course.course_topics.map((row) => row.topics[0] && <span className="tag" key={row.topics[0].slug}>{row.topics[0].name}</span>)}</div><h2><Link href={`/courses/${course.slug}`}>{course.title}</Link></h2><p className="muted">{course.short_description || "Описание скоро появится."}</p><div className="actions split"><strong>{formatCoursePrice(course.access_type, course.price_amount, course.currency)}</strong><span className="muted">{course.estimated_minutes ? `${course.estimated_minutes} мин` : course.level}</span></div></div></article>; }) : <div className="card center stack"><h2>Курсы не найдены</h2><p className="muted">Измените фильтры или загляните позже.</p></div>}</div></main>;
+}

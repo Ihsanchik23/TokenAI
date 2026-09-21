@@ -28,3 +28,19 @@ export async function requireUser() {
 
   return user;
 }
+
+export async function requireStaff() {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.role !== "admin" && profile?.role !== "instructor") {
+    redirect("/profile?message=staff-required");
+  }
+
+  return { ...user, role: profile.role };
+}

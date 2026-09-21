@@ -201,7 +201,8 @@ h2 {
 }
 
 input,
-textarea {
+textarea,
+select {
   background: #fff;
   border: 1px solid #cfd4df;
   border-radius: 10px;
@@ -216,7 +217,8 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(91, 79, 233, 0.14);
   outline: none;
@@ -396,6 +398,127 @@ textarea:focus {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.admin-shell,
+.admin-shell section {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.admin-header,
+.split,
+.course-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.admin-header {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+}
+
+.admin-header h1 {
+  font-size: 2rem;
+}
+
+.form-grid,
+.filter-row,
+.catalog-filters {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.filter-row {
+  grid-template-columns: minmax(180px, 1fr) 220px auto;
+}
+
+.catalog-filters {
+  grid-template-columns: 2fr repeat(4, 1fr) auto;
+}
+
+.course-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.course-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 18px 50px rgba(32, 36, 52, 0.07);
+  overflow: hidden;
+}
+
+.course-card > img,
+.cover-placeholder {
+  aspect-ratio: 16 / 9;
+  height: auto;
+  object-fit: cover;
+  width: 100%;
+}
+
+.cover-placeholder {
+  align-items: center;
+  background: linear-gradient(135deg, #ddd9ff, #8a7ffa);
+  color: white;
+  display: flex;
+  font-size: 2rem;
+  font-weight: 800;
+  justify-content: center;
+}
+
+.card-body {
+  padding: 22px;
+}
+
+.badge,
+.lesson-kind {
+  background: #edf0f5;
+  border-radius: 999px;
+  color: #50586b;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 5px 9px;
+  text-transform: uppercase;
+}
+
+.badge.published { background: #e5f8ef; color: var(--success); }
+.badge.archived { background: #f2f2f2; color: #777; }
+
+details > summary {
+  cursor: pointer;
+  font-size: 1.25rem;
+  font-weight: 750;
+}
+
+.details-body { margin-top: 20px; }
+.inline-editor { border-top: 1px solid var(--border); padding-top: 16px; }
+.lesson-list { display: flex; flex-direction: column; }
+.lesson-row { align-items: center; border-top: 1px solid var(--border); display: grid; gap: 14px; grid-template-columns: auto 1fr auto; padding: 14px 0; }
+.lesson-row .muted { font-size: .85rem; }
+.icon-button { background: white; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; min-height: 34px; min-width: 34px; }
+.icon-button:disabled { opacity: .35; }
+.danger { color: var(--danger); }
+.success-text { color: var(--success); }
+.quiz-question { background: #f8f8fb; border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+.quiz-option { align-items: center; display: grid; gap: 10px; grid-template-columns: auto 1fr; }
+.quiz-option > input:first-child { width: auto; }
+.course-hero { align-items: center; display: grid; gap: 40px; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr); }
+.course-hero > img, .course-hero > .cover-placeholder { border-radius: 20px; width: 100%; }
+.narrow-content { max-width: 820px; }
+.lesson-content { line-height: 1.75; white-space: pre-wrap; }
+.lesson-content > * + * { margin-top: 20px; }
+.video-frame { aspect-ratio: 16 / 9; }
+.video-frame iframe { border: 0; height: 100%; width: 100%; }
+
 .visually-hidden {
   clip: rect(0 0 0 0);
   height: 1px;
@@ -409,7 +532,13 @@ textarea:focus {
 
 @media (max-width: 760px) {
   .hero,
-  .placeholder-grid {
+  .placeholder-grid,
+  .course-grid,
+  .course-hero,
+  .form-grid,
+  .form-grid.three,
+  .filter-row,
+  .catalog-filters {
     grid-template-columns: 1fr;
   }
 
@@ -427,10 +556,14 @@ textarea:focus {
 
   .avatar-editor,
   .profile-summary,
-  .public-profile-header {
+  .public-profile-header,
+  .admin-header,
+  .course-row {
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .lesson-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
