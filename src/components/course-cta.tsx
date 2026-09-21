@@ -18,7 +18,7 @@ export function CourseCta({ courseId, slug, accessType, authenticated, enrolled 
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
-  if (enrolled) return <Link className="button" href={`/my-courses/${courseId}`}>Продолжить обучение</Link>;
+  if (enrolled) return <Link className="button" href={`/learn/${slug}`}>Продолжить обучение</Link>;
   if (accessType === "private") return <p className="notice">Доступ к этому курсу выдаёт администратор.</p>;
 
   const label = accessType === "free" ? "Начать бесплатно" : "Купить курс";

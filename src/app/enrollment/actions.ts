@@ -48,8 +48,9 @@ export async function startCourseAction(courseId: string) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("start_my_course", { target_course_id: courseId });
   if (error) redirect("/my-courses?course=unavailable");
+  const { data: course } = await supabase.from("courses").select("slug").eq("id", courseId).maybeSingle();
   revalidatePath("/my-courses");
-  redirect(`/my-courses/${courseId}`);
+  redirect(course?.slug ? `/learn/${course.slug}` : "/my-courses");
 }
 
 export async function grantCourseAccessAction(
