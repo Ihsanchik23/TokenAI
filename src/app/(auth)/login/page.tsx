@@ -10,13 +10,14 @@ const messages: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: PageProps<"/login">) {
+  const { message, next } = await searchParams;
+  const nextPath = typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : "/profile";
   const user = await getOptionalUser();
 
   if (user) {
-    redirect("/profile");
+    redirect(nextPath);
   }
 
-  const { message } = await searchParams;
   const notice = messages[typeof message === "string" ? message : ""];
 
   return (
@@ -28,7 +29,7 @@ export default async function LoginPage({
           <p className="muted">Продолжите обучение и работу с профилем.</p>
         </div>
         {notice && <p className="notice success">{notice}</p>}
-        <AuthForm mode="login" />
+        <AuthForm mode="login" nextPath={nextPath} />
       </section>
     </main>
   );

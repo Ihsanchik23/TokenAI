@@ -12,9 +12,10 @@ const initialAuthState: AuthActionState = { status: "idle" };
 
 type AuthFormProps = {
   mode: "login" | "signup";
+  nextPath?: string;
 };
 
-export function AuthForm({ mode }: AuthFormProps) {
+export function AuthForm({ mode, nextPath }: AuthFormProps) {
   const action = mode === "login" ? loginAction : signupAction;
   const [state, formAction, pending] = useActionState(
     action,
@@ -24,6 +25,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   return (
     <form action={formAction} className="stack">
+      {nextPath && <input type="hidden" name="next" value={nextPath} />}
       <div className="field">
         <label htmlFor={`${mode}-email`}>Email</label>
         <input
@@ -89,7 +91,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <p className="muted center">
         {isSignup ? "Уже есть аккаунт?" : "Нет аккаунта?"} {" "}
-        <Link href={isSignup ? "/login" : "/signup"}>
+        <Link href={`${isSignup ? "/login" : "/signup"}${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}`}>
           {isSignup ? "Войти" : "Зарегистрироваться"}
         </Link>
       </p>

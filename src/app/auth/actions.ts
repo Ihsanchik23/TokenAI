@@ -59,7 +59,11 @@ function readCredentials(formData: FormData, includeConfirmation: boolean) {
   return { email, password, fieldErrors };
 }
 
-async function destinationAfterAuth() {
+function safeDestination(value: string) {
+  return value.startsWith("/") && !value.startsWith("//") ? value : "/profile";
+}
+
+async function destinationAfterAuth(requestedDestination = "/profile") {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
@@ -71,7 +75,7 @@ async function destinationAfterAuth() {
   await ensureMyProfile(supabase);
   const profile = await getMyProfile(supabase, userId);
 
-  return isProfileComplete(profile) ? "/profile" : "/onboarding";
+  return isProfileComplete(profile) ? safeDestination(requestedDestination) : "/onboarding";
 }
 
 export async function signupAction(
@@ -135,7 +139,9 @@ export async function loginAction(
   let destination = "/onboarding";
 
   try {
-    destination = await destinationAfterAuth();
+    destination = await destinationAfterAuth(
+      safeDestination(String(formData.get("next") ?? "/profile")),
+    );
   } catch {
     await supabase.auth.signOut({ scope: "local" });
     return {

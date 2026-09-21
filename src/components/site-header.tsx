@@ -21,6 +21,7 @@ export async function SiteHeader() {
           {user ? (
             <>
               {(profile?.role === "admin" || profile?.role === "instructor") && <Link href="/admin">Studio</Link>}
+              <Link href="/my-courses">Мои курсы</Link>
               <Link href="/profile">Профиль</Link>
               <form action={logoutAction}>
                 <button className="link-button" type="submit">
