@@ -33,6 +33,10 @@ export default async function ShowcasePage({ searchParams }: PageProps<"/showcas
   return (
     <main className="page-shell stack roomy">
       <header className="stack compact"><p className="eyebrow">Работы студентов</p><h1>TokenAI Showcase</h1><p className="muted">Опубликованные проекты участников, новые работы показаны первыми.</p></header>
+      <nav className="secondary-nav" aria-label="Раздел сообщества">
+        <Link href="/students">Студенты</Link>
+        <Link className="active" href="/showcase" aria-current="page">Работы</Link>
+      </nav>
       <form className="card showcase-filters">
         <input name="q" defaultValue={q} maxLength={100} placeholder="Поиск по работам" />
         <select name="topic" defaultValue={topic}><option value="">Все категории</option>{((topicRows ?? []) as PublicTopic[]).map((item) => <option value={item.slug} key={item.id}>{item.name}</option>)}</select>

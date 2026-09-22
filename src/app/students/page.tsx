@@ -29,6 +29,10 @@ export default async function StudentsPage({ searchParams }: PageProps<"/student
   return (
     <main className="page-shell stack roomy">
       <header className="stack compact"><p className="eyebrow">Сообщество</p><h1>Студенты TokenAI</h1><p className="muted">Публичные профили, достижения и работы участников.</p></header>
+      <nav className="secondary-nav" aria-label="Раздел сообщества">
+        <Link className="active" href="/students" aria-current="page">Студенты</Link>
+        <Link href="/showcase">Работы</Link>
+      </nav>
       <form className="card filter-row directory-filters">
         <input name="q" defaultValue={q} maxLength={80} placeholder="Имя или username" />
         <select name="topic" defaultValue={topic}><option value="">Все интересы</option>{((topicRows ?? []) as PublicTopic[]).map((item) => <option value={item.slug} key={item.id}>{item.name}</option>)}</select>
