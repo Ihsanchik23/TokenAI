@@ -468,6 +468,72 @@ select:focus {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.student-card-header {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.student-avatar {
+  font-size: 1.2rem;
+  height: 64px;
+  width: 64px;
+}
+
+.directory-filters {
+  grid-template-columns: minmax(220px, 1fr) 240px auto;
+}
+
+.showcase-filters {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(220px, 1fr) 200px 200px auto;
+}
+
+.pagination {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+}
+
+.showcase-detail-cover {
+  border-radius: 20px;
+  max-height: 540px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.showcase-cover-preview {
+  display: grid;
+  gap: 12px;
+  max-width: 480px;
+}
+
+.showcase-cover-preview img {
+  border-radius: 12px;
+  height: auto;
+  width: 100%;
+}
+
+.showcase-owner-row {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.moderation-work {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.3fr);
+}
+
+.moderation-work > div:first-child > img,
+.moderation-work > div:first-child > .cover-placeholder {
+  border-radius: 14px;
+  width: 100%;
+}
+
 .course-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -568,6 +634,12 @@ details > summary {
   .form-grid.three,
   .filter-row,
   .catalog-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .directory-filters,
+  .showcase-filters,
+  .moderation-work {
     grid-template-columns: 1fr;
   }
 

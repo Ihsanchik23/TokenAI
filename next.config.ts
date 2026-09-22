@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
         hostname: "lcknkmwqdbidykfwngok.supabase.co",
         pathname: "/storage/v1/object/public/course-covers/**",
       },
+      {
+        protocol: "https",
+        hostname: "lcknkmwqdbidykfwngok.supabase.co",
+        pathname: "/storage/v1/object/sign/showcase-files/**",
+      },
     ],
   },
 };

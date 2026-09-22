@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitAssignmentAction } from "@/app/learning/assignment-actions";
@@ -117,6 +118,6 @@ export function AssignmentLesson({ userId, data }: { userId: string; data: Assig
       <button className="button" disabled={pending || uploading}>{uploading ? "Загружаем файлы…" : pending ? "Отправляем…" : latest ? "Отправить новую попытку" : "Отправить работу"}</button>
     </form> : <p className={latest?.status === "approved" ? "notice success" : "notice"}>{latest?.status === "approved" ? "Работа принята преподавателем." : "Работа отправлена и ожидает проверки."}</p>}
 
-    {data.submissions.length > 0 && <section className="stack"><h3>История отправок</h3>{data.submissions.map((submission) => <article className="quiz-question stack compact" key={submission.id}><div className="actions split"><strong>Попытка {submission.attemptNumber}</strong><span className={`badge ${submission.status}`}>{statusLabels[submission.status]}</span></div><p className="field-help">{new Date(submission.submittedAt).toLocaleString("ru-RU")}</p>{submission.textAnswer && <p>{submission.textAnswer}</p>}{submission.linkUrl && <a href={submission.linkUrl} target="_blank" rel="noreferrer">Открыть ссылку ↗</a>}{submission.files.map((file) => <a href={file.signedUrl ?? "#"} target="_blank" rel="noreferrer" key={file.id}>{file.name} · {formatBytes(file.size)}</a>)}{submission.teacherComment && <p className="notice"><strong>Комментарий преподавателя:</strong> {submission.teacherComment}</p>}</article>)}</section>}
+    {data.submissions.length > 0 && <section className="stack"><h3>История отправок</h3>{data.submissions.map((submission) => <article className="quiz-question stack compact" key={submission.id}><div className="actions split"><strong>Попытка {submission.attemptNumber}</strong><span className={`badge ${submission.status}`}>{statusLabels[submission.status]}</span></div><p className="field-help">{new Date(submission.submittedAt).toLocaleString("ru-RU")}</p>{submission.textAnswer && <p>{submission.textAnswer}</p>}{submission.linkUrl && <a href={submission.linkUrl} target="_blank" rel="noreferrer">Открыть ссылку ↗</a>}{submission.files.map((file) => <a href={file.signedUrl ?? "#"} target="_blank" rel="noreferrer" key={file.id}>{file.name} · {formatBytes(file.size)}</a>)}{submission.teacherComment && <p className="notice"><strong>Комментарий преподавателя:</strong> {submission.teacherComment}</p>}{submission.status === "approved" && <Link href={`/profile/showcase/new?submission=${submission.id}`}>Добавить в Showcase</Link>}</article>)}</section>}
   </div>;
 }

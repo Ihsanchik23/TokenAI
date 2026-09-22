@@ -18,6 +18,8 @@ export async function SiteHeader() {
         </Link>
         <div className="nav-links">
           <Link href="/courses">Курсы</Link>
+          <Link href="/students">Студенты</Link>
+          <Link href="/showcase">Showcase</Link>
           {user ? (
             <>
               {(profile?.role === "admin" || profile?.role === "instructor") && <Link href="/admin">Studio</Link>}
