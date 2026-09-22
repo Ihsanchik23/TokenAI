@@ -9,6 +9,7 @@ export async function SiteHeader() {
   const { data: profile } = supabase
     ? await supabase.from("profiles").select("role").eq("id", user!.id).maybeSingle()
     : { data: null };
+  const { data: unreadCount } = supabase ? await supabase.rpc("get_unread_notification_count") : { data: 0 };
 
   return (
     <header className="site-header">
@@ -24,6 +25,7 @@ export async function SiteHeader() {
             <>
               {(profile?.role === "admin" || profile?.role === "instructor") && <Link href="/admin">Studio</Link>}
               <Link href="/my-courses">Мои курсы</Link>
+              <Link href="/notifications">Уведомления{Number(unreadCount) > 0 ? ` (${unreadCount})` : ""}</Link>
               <Link href="/profile">Профиль</Link>
               <form action={logoutAction}>
                 <button className="link-button" type="submit">

@@ -153,6 +153,39 @@ h2 {
   padding: 28px;
 }
 
+.notification-card.unread {
+  border-color: #aca5ff;
+  box-shadow: 0 18px 50px rgba(91, 79, 233, 0.12);
+}
+
+.analytics-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.analytics-grid.compact {
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metric-card strong {
+  font-size: 2rem;
+}
+
+.module-metric {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  padding-top: 10px;
+}
+
 .certificate-card {
   background: linear-gradient(135deg, #faf9ff, #f2f0ff);
   border: 1px solid #d8d3ff;
