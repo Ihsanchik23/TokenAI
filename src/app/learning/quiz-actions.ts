@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
+import { preparePendingCertificatesForUser } from "@/lib/certificates";
 import type { QuizAnswer } from "@/lib/quiz";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,7 +35,7 @@ export async function submitQuizAttemptAction(
   attemptId: string,
   answers: QuizAnswer[],
 ): Promise<QuizActionResult> {
-  await requireUser();
+  const user = await requireUser();
   if (!uuidPattern.test(attemptId) || !Array.isArray(answers) || answers.length > 200) {
     return { ok: false, message: "Некорректные ответы." };
   }
@@ -54,6 +55,7 @@ export async function submitQuizAttemptAction(
   });
   if (error) return { ok: false, message: quizErrorMessage(error.code) };
   const result = data as { attemptNumber?: number; score?: number; percentage?: number } | null;
+  await preparePendingCertificatesForUser(supabase, user.id);
   revalidatePath("/my-courses");
   return {
     ok: true,

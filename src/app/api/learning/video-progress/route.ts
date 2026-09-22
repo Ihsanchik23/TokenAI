@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { preparePendingCertificatesForUser } from "@/lib/certificates";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -6,7 +7,8 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
-  if (typeof claims?.claims?.sub !== "string") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = claims?.claims?.sub;
+  if (typeof userId !== "string") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
@@ -24,5 +26,6 @@ export async function POST(request: Request) {
   });
   if (error) return NextResponse.json({ error: "Progress was not saved" }, { status: error.code === "42501" ? 403 : 400 });
   const progress = Array.isArray(data) ? data[0] : data;
+  if (progress?.status === "completed") await preparePendingCertificatesForUser(supabase, userId);
   return NextResponse.json({ status: progress?.status, progressPercent: progress?.progress_percent ?? 0 });
 }

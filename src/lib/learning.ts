@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { CourseCompletion } from "@/lib/certificates";
 import { createClient } from "@/lib/supabase/server";
 
 export type LearningLesson = {
@@ -78,24 +79,33 @@ export async function getLearningState(courseSlug: string, userId: string) {
   const lessons = learningModules.flatMap((courseModule) => courseModule.lessons);
   const requiredLessons = lessons.filter((lesson) => lesson.is_required);
   const completedRequired = requiredLessons.filter((lesson) => lesson.state === "completed").length;
-  const learningComplete = requiredLessons.length > 0 && completedRequired === requiredLessons.length;
+  const curriculumComplete = completedRequired === requiredLessons.length;
+  const { data: completionData } = enrollment
+    ? await supabase.rpc("evaluate_course_completion", { target_enrollment_id: enrollment.id })
+    : { data: null };
+  const completion = completionData as CourseCompletion | null;
+  const learningComplete = Boolean(completion?.fullyCompleted);
   const activeIncomplete = lessons
     .filter((lesson) => lesson.state === "available" && lesson.progressStatus === "in_progress")
     .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""))[0];
-  const continueLesson = learningComplete
+  const continueLesson = curriculumComplete
     ? null
     : activeIncomplete ?? lessons.find((lesson) => lesson.state === "available") ?? null;
 
   return {
     course,
-    enrollment: expired ? null : enrollment,
+    enrollment: expired ? null : enrollment
+      ? { ...enrollment, status: completion?.status ?? enrollment.status, completed_at: completion?.completedAt ?? null }
+      : null,
     staff,
     modules: learningModules,
     lessons,
     requiredTotal: requiredLessons.length,
     completedRequired,
-    progressPercent: requiredLessons.length ? Math.round((completedRequired / requiredLessons.length) * 100) : 0,
+    progressPercent: completion?.progressPercent ?? (requiredLessons.length ? Math.round((completedRequired / requiredLessons.length) * 100) : 100),
+    curriculumComplete,
     learningComplete,
+    completion,
     continueLesson,
   };
 }

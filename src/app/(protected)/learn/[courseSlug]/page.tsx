@@ -6,7 +6,7 @@ export default async function ContinueCoursePage({ params }: { params: Promise<{
   const [{ courseSlug }, user] = await Promise.all([params, requireUser()]);
   const state = await getLearningState(courseSlug, user.id);
   if (!state) notFound();
-  if (state.learningComplete) redirect(`/learn/${courseSlug}/complete`);
-  if (!state.continueLesson) notFound();
+  if (state.learningComplete || state.curriculumComplete) redirect(`/learn/${courseSlug}/complete`);
+  if (!state.continueLesson) redirect(`/learn/${courseSlug}/complete`);
   redirect(`/learn/${courseSlug}/${state.continueLesson.id}`);
 }

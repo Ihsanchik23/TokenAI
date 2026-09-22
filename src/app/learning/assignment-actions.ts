@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireStaff, requireUser } from "@/lib/auth";
 import type { UploadedAssignmentFile } from "@/lib/assignments";
+import { preparePendingCertificatesForUser } from "@/lib/certificates";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -71,6 +72,14 @@ export async function reviewAssignmentAction(
     if (error.code === "22023") return { ok: false, message: "Для доработки укажите комментарий преподавателя." };
     if (error.code === "P0001") return { ok: false, message: "Эта попытка уже проверена или больше не является последней." };
     return { ok: false, message: "Не удалось сохранить результат проверки." };
+  }
+  if (status === "approved") {
+    const { data: submission } = await supabase
+      .from("assignment_submissions")
+      .select("user_id")
+      .eq("id", submissionId)
+      .maybeSingle();
+    if (submission?.user_id) await preparePendingCertificatesForUser(supabase, submission.user_id);
   }
   revalidatePath("/admin/submissions");
   return { ok: true, message: status === "approved" ? "Работа принята." : "Работа отправлена на доработку." };

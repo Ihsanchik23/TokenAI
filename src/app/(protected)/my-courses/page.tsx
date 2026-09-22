@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { startCourseAction } from "@/app/enrollment/actions";
+import { CertificateCard } from "@/components/certificate-card";
 import { requireUser } from "@/lib/auth";
+import { evaluateCourseCompletion, getCertificateDownloadUrl, type CourseCompletion } from "@/lib/certificates";
 import { getCourseCoverUrl } from "@/lib/course-utils";
 import { ensureMyProfile, getMyProfile, isProfileComplete } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -17,19 +19,19 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
   if (!profile || !isProfileComplete(profile)) redirect("/onboarding");
 
   const { data: rows } = await supabase.from("enrollments").select("id,course_id,status,access_source,access_granted_at,started_at,completed_at,expires_at").eq("user_id", user.id).in("status", ["active", "completed"]).order("access_granted_at", { ascending: false });
-  const enrollments = (rows ?? []).filter((row) => !row.expires_at || new Date(row.expires_at) > new Date());
+  const enrollments = (rows ?? []).filter((row) => row.status === "completed" || !row.expires_at || new Date(row.expires_at) > new Date());
   const courseIds = enrollments.map((row) => row.course_id);
-  const [{ data: courses }, { data: progressRows }, { data: modules }] = courseIds.length ? await Promise.all([
+  const [{ data: courses }, { data: certificateRows }, completionRows] = courseIds.length ? await Promise.all([
     supabase.from("courses").select("id,slug,title,cover_path,access_type,status").in("id", courseIds),
-    supabase.from("lesson_progress").select("enrollment_id,lesson_id,status").in("enrollment_id", enrollments.map((row) => row.id)),
-    supabase.from("modules").select("course_id,lessons(id,is_required)").in("course_id", courseIds),
-  ]) : [{ data: [] }, { data: [] }, { data: [] }];
+    supabase.from("certificates").select("id,enrollment_id,certificate_code,issued_at,pdf_path").in("enrollment_id", enrollments.map((row) => row.id)),
+    Promise.all(enrollments.map((enrollment) => evaluateCourseCompletion(supabase, enrollment.id))),
+  ]) : [{ data: [] }, { data: [] }, [] as (CourseCompletion | null)[]];
   const courseById = new Map((courses ?? []).map((course) => [course.id, course]));
-  const requiredByCourse = new Map<string, string[]>();
-  for (const courseModule of modules ?? []) {
-    const required = courseModule.lessons.filter((lesson) => lesson.is_required).map((lesson) => lesson.id);
-    requiredByCourse.set(courseModule.course_id, [...(requiredByCourse.get(courseModule.course_id) ?? []), ...required]);
-  }
+  const completionByEnrollment = new Map(enrollments.map((enrollment, index) => [enrollment.id, completionRows[index]]));
+  const certificateByEnrollment = new Map(await Promise.all((certificateRows ?? []).map(async (certificate) => [certificate.enrollment_id, {
+    ...certificate,
+    downloadUrl: await getCertificateDownloadUrl(supabase, certificate.pdf_path),
+  }] as const)));
 
   return (
     <main className="page-shell stack roomy">
@@ -40,12 +42,11 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
         {enrollments.length ? enrollments.map((enrollment) => {
           const course = courseById.get(enrollment.course_id);
           if (!course) return null;
-          const requiredIds = requiredByCourse.get(course.id) ?? [];
-          const completedIds = new Set((progressRows ?? []).filter((row) => row.enrollment_id === enrollment.id && row.status === "completed").map((row) => row.lesson_id));
-          const completedRequired = requiredIds.filter((id) => completedIds.has(id)).length;
-          const progress = requiredIds.length ? Math.round((completedRequired / requiredIds.length) * 100) : 0;
+          const completion = completionByEnrollment.get(enrollment.id);
+          const certificate = certificateByEnrollment.get(enrollment.id);
+          const progress = completion?.progressPercent ?? 0;
           const cover = getCourseCoverUrl(course.cover_path);
-          return <article className="course-card" key={enrollment.id}>{cover ? <Image src={cover} alt="" width={640} height={360} /> : <div className="cover-placeholder">TokenAI</div>}<div className="card-body stack"><div className="actions split"><span className={`badge ${enrollment.status}`}>{statusLabels[enrollment.status]}</span><span className="muted">{enrollment.access_source}</span></div><h2>{course.title}</h2><p className="muted">{course.access_type} · {course.status === "archived" ? "курс в архиве, доступ сохранён" : course.status}</p><div><strong>Прогресс: {progress}%</strong><div className="progress-track"><span style={{ width: `${progress}%` }} /></div><small className="field-help">{completedRequired} из {requiredIds.length} обязательных уроков</small></div>{enrollment.started_at ? <Link className="button" href={`/learn/${course.slug}`}>{progress === 100 ? "Посмотреть итоги" : "Продолжить"}</Link> : <form action={startCourseAction.bind(null, course.id)}><button className="button">Начать</button></form>}</div></article>;
+          return <article className="course-card" key={enrollment.id}>{cover ? <Image src={cover} alt="" width={640} height={360} /> : <div className="cover-placeholder">TokenAI</div>}<div className="card-body stack"><div className="actions split"><span className={`badge ${completion?.status ?? enrollment.status}`}>{statusLabels[completion?.status ?? enrollment.status]}</span><span className="muted">{enrollment.access_source}</span></div><h2>{course.title}</h2><p className="muted">{course.access_type} · {course.status === "archived" ? "курс в архиве, доступ сохранён" : course.status}</p><div><strong>Прогресс: {progress}%</strong><div className="progress-track"><span style={{ width: `${progress}%` }} /></div><small className="field-help">{completion?.completedRequired ?? 0} из {completion?.requiredTotal ?? 0} обязательных уроков</small></div>{completion?.missingAssignments ? <p className="notice">Ожидают одобрения задания: {completion.missingAssignments}</p> : null}{enrollment.started_at ? <Link className="button" href={`/learn/${course.slug}`}>{completion?.fullyCompleted ? "Итоги и сертификат" : "Продолжить"}</Link> : <form action={startCourseAction.bind(null, course.id)}><button className="button">Начать</button></form>}{certificate && <CertificateCard certificate={{ ...certificate, courseTitle: course.title }} />}</div></article>;
         }) : <section className="card stack center"><h2>Курсов пока нет</h2><p className="muted">Выберите бесплатный или платный курс в каталоге.</p><Link className="button" href="/courses">Открыть каталог</Link></section>}
       </div>
     </main>
