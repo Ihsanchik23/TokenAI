@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowUpRight, Award, BookOpen, Eye, EyeOff, Pencil, Plus, Send, Settings2 } from "lucide-react";
 import { deleteShowcaseWorkFormAction, submitShowcaseWorkFormAction } from "@/app/showcase/actions";
 import { AvatarUpload } from "@/components/avatar-upload";
 import { CertificateCard } from "@/components/certificate-card";
@@ -7,6 +9,7 @@ import { ConfirmButton } from "@/components/confirm-button";
 import { ProfileForm } from "@/components/profile-form";
 import { requireUser } from "@/lib/auth";
 import { getCertificateDownloadUrl } from "@/lib/certificates";
+import { getCourseCoverUrl } from "@/lib/course-utils";
 import {
   ensureMyProfile,
   getMyProfile,
@@ -14,6 +17,7 @@ import {
   type Topic,
 } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
+import { getShowcaseCoverUrls } from "@/lib/showcase";
 
 export default async function ProfilePage() {
   const user = await requireUser();
@@ -25,7 +29,7 @@ export default async function ProfilePage() {
     redirect("/onboarding");
   }
 
-  const [{ data: topics, error: topicsError }, { data: selected }, { data: certificateRows }, { data: showcaseRows }] =
+  const [{ data: topics, error: topicsError }, { data: selected }, { data: certificateRows }, { data: showcaseRows }, { data: enrollmentRows }] =
     await Promise.all([
       supabase.from("topics").select("id, name, slug").order("name"),
       supabase
@@ -39,9 +43,15 @@ export default async function ProfilePage() {
         .order("issued_at", { ascending: false }),
       supabase
         .from("showcase_works")
-        .select("id,title,status,moderation_comment,created_at,published_at")
+        .select("id,title,status,moderation_comment,created_at,published_at,cover_path,topic:topics(name)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("enrollments")
+        .select("id,status,started_at,completed_at,course:courses(id,slug,title,cover_path,status)")
+        .eq("user_id", user.id)
+        .in("status", ["active", "completed"])
+        .order("access_granted_at", { ascending: false }),
     ]);
 
   if (topicsError) {
@@ -56,57 +66,47 @@ export default async function ProfilePage() {
     courseTitle: certificate.enrollment[0]?.course[0]?.title ?? "Курс TokenAI",
     downloadUrl: await getCertificateDownloadUrl(supabase, certificate.pdf_path),
   })));
+  const workCovers = await getShowcaseCoverUrls(supabase, (showcaseRows ?? []).map((work) => work.cover_path));
+  const selectedTopics = ((topics ?? []) as Topic[]).filter((topic) => (selected ?? []).some((item) => item.topic_id === topic.id));
+  const statusLabels: Record<string, string> = { draft: "Черновик", pending: "На модерации", published: "Опубликовано", rejected: "Отклонено" };
 
   return (
-    <main className="page-shell profile-shell">
-      <section className="profile-summary card">
+    <main className="page-shell own-profile-page">
+      <section className="own-profile-identity">
         <AvatarUpload
           userId={user.id}
           currentPath={profile.avatar_path}
           displayName={profile.display_name}
         />
-        <div className="stack compact">
+        <div className="own-profile-copy">
           <p className="eyebrow">Ваш профиль</p>
           <h1>{profile.display_name}</h1>
           <p className="handle">@{profile.username}</p>
-          <p className="muted">
-            {profile.is_public ? "Публичный профиль" : "Приватный профиль"} · {profile.role}
-          </p>
+          {profile.bio && <p className="portfolio-bio">{profile.bio}</p>}
+          {selectedTopics.length ? <div className="tag-list">{selectedTopics.map((topic) => <span className="tag" key={topic.id}>{topic.name}</span>)}</div> : <p className="muted">Добавьте интересы, чтобы заполнить профиль.</p>}
+          <p className={`profile-visibility ${profile.is_public ? "public" : "private"}`}>{profile.is_public ? <Eye aria-hidden="true" size={16} /> : <EyeOff aria-hidden="true" size={16} />}{profile.is_public ? "Публичный профиль" : "Приватный профиль"}</p>
           {profile.is_public && (
-            <Link href={`/students/${profile.username}`}>
-              Открыть публичную страницу
-            </Link>
+            <Link className="public-profile-link" href={`/students/${profile.username}`}>Открыть публичную страницу<ArrowUpRight aria-hidden="true" size={16} /></Link>
           )}
         </div>
+        <a className="button secondary profile-edit-jump" href="#edit-profile"><Pencil aria-hidden="true" size={17} />Редактировать</a>
       </section>
 
-      <section className="card stack">
-        <div>
-          <p className="eyebrow">Достижения</p>
-          <h2>Сертификаты</h2>
-        </div>
-        {certificates.length
-          ? certificates.map((certificate) => <CertificateCard certificate={certificate} key={certificate.id} />)
-          : <p className="muted">Сертификаты появятся после полного завершения курсов.</p>}
+      <section className="own-profile-section own-works-section">
+        <div className="portfolio-section-heading"><div><p className="eyebrow">Портфолио</p><h2>Мои работы</h2></div><Link className="button small" href="/profile/showcase/new"><Plus aria-hidden="true" size={17} />Добавить работу</Link></div>
+        {(showcaseRows ?? []).length ? <div className="owner-work-grid">{(showcaseRows ?? []).map((work) => { const cover = work.cover_path ? workCovers.get(work.cover_path) ?? null : null; return <article className="owner-work-item" key={work.id}><div className="owner-work-media">{cover ? <Image src={cover} alt={`Обложка работы «${work.title}»`} fill sizes="(max-width: 700px) 100vw, 33vw" /> : <div className="showcase-missing-media"><span>T</span><small>Без обложки</small></div>}<span className={`moderation-status ${work.status}`}>{statusLabels[work.status]}</span></div><div className="owner-work-copy"><p>{work.topic[0]?.name ?? "Showcase"}</p><h3>{work.title}</h3>{work.moderation_comment && <div className="moderation-comment"><strong>Комментарий модератора</strong><span>{work.moderation_comment}</span></div>}<div className="owner-work-actions">{work.status === "published" ? <Link href={`/showcase/${work.id}`}>Открыть<ArrowUpRight aria-hidden="true" size={15} /></Link> : <><Link href={`/profile/showcase/${work.id}/edit`}><Pencil aria-hidden="true" size={15} />Редактировать</Link>{["draft", "rejected"].includes(work.status) && <form action={submitShowcaseWorkFormAction.bind(null, work.id)}><button className="link-button"><Send aria-hidden="true" size={15} />На модерацию</button></form>}<form action={deleteShowcaseWorkFormAction.bind(null, work.id)}><ConfirmButton message="Удалить эту неопубликованную работу?">Удалить</ConfirmButton></form></>}</div></div></article>; })}</div> : <div className="portfolio-empty owner-empty"><p>Добавьте самостоятельную работу или принятую работу из задания.</p><Link href="/profile/showcase/new">Добавить первую работу</Link></div>}
       </section>
 
-      <section className="card stack">
-        <div className="actions split"><div><p className="eyebrow">Портфолио</p><h2>Мои Showcase-работы</h2></div><Link className="button small" href="/profile/showcase/new">Добавить работу</Link></div>
-        {(showcaseRows ?? []).length ? (showcaseRows ?? []).map((work) => <article className="course-row showcase-owner-row" key={work.id}><div><strong>{work.title}</strong><p className="field-help">Статус: {work.status}</p>{work.moderation_comment && <p className="field-help">Комментарий: {work.moderation_comment}</p>}</div><div className="actions">{work.status === "published" ? <Link href={`/showcase/${work.id}`}>Открыть</Link> : <><Link href={`/profile/showcase/${work.id}/edit`}>Редактировать</Link>{["draft", "rejected"].includes(work.status) && <form action={submitShowcaseWorkFormAction.bind(null, work.id)}><button className="link-button">На модерацию</button></form>}<form action={deleteShowcaseWorkFormAction.bind(null, work.id)}><ConfirmButton message="Удалить эту неопубликованную работу?">Удалить</ConfirmButton></form></>}</div></article>) : <p className="muted">Добавьте самостоятельную работу или принятую работу из задания.</p>}
-      </section>
+      <div className="own-profile-columns">
+        <section className="own-profile-section"><div className="portfolio-section-heading"><div><p className="eyebrow">Обучение</p><h2>Курсы</h2></div><BookOpen aria-hidden="true" size={22} /></div><div className="profile-course-list">{(enrollmentRows ?? []).length ? (enrollmentRows ?? []).map((enrollment) => { const course = enrollment.course[0]; if (!course) return null; const cover = getCourseCoverUrl(course.cover_path); return <article className="profile-course-item" key={enrollment.id}><div className="profile-course-cover">{cover ? <Image src={cover} alt="" fill sizes="92px" /> : <div className="cover-placeholder">T</div>}</div><div><span>{enrollment.status === "completed" ? "Завершён" : "Активный"}</span><strong>{course.title}</strong></div><Link href={enrollment.status === "completed" ? `/learn/${course.slug}/complete` : `/learn/${course.slug}`} aria-label={`Открыть курс «${course.title}»`}><ArrowUpRight aria-hidden="true" size={18} /></Link></article>; }) : <p className="portfolio-empty">Курсов пока нет.</p>}</div></section>
 
-      <section className="card stack roomy">
-        <div>
-          <p className="eyebrow">Настройки</p>
-          <h2>Редактирование профиля</h2>
-        </div>
-        <ProfileForm
-          profile={profile}
-          topics={(topics ?? []) as Topic[]}
-          selectedTopicIds={(selected ?? []).map((item) => item.topic_id)}
-          mode="edit"
-        />
-      </section>
+        <section className="own-profile-section"><div className="portfolio-section-heading"><div><p className="eyebrow">Достижения</p><h2>Сертификаты</h2></div><Award aria-hidden="true" size={22} /></div><div className="profile-certificate-list">{certificates.length ? certificates.map((certificate) => <CertificateCard certificate={certificate} key={certificate.id} />) : <p className="portfolio-empty">Сертификаты появятся после полного завершения курсов.</p>}</div></section>
+      </div>
+
+      <details className="profile-settings" id="edit-profile">
+        <summary><span><Settings2 aria-hidden="true" size={20} /><span><strong>Редактировать профиль</strong><small>Имя, username, описание, интересы и приватность</small></span></span><span aria-hidden="true">+</span></summary>
+        <div className="profile-settings-body"><ProfileForm profile={profile} topics={(topics ?? []) as Topic[]} selectedTopicIds={(selected ?? []).map((item) => item.topic_id)} mode="edit" /></div>
+      </details>
     </main>
   );
 }

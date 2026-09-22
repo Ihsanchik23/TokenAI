@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { StudentCard } from "@/components/student-card";
 import type { PublicStudent, PublicTopic } from "@/lib/showcase";
 import { createClient } from "@/lib/supabase/server";
@@ -27,19 +28,19 @@ export default async function StudentsPage({ searchParams }: PageProps<"/student
   const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
 
   return (
-    <main className="page-shell stack roomy">
-      <header className="stack compact"><p className="eyebrow">Сообщество</p><h1>Студенты TokenAI</h1><p className="muted">Публичные профили, достижения и работы участников.</p></header>
-      <nav className="secondary-nav" aria-label="Раздел сообщества">
+    <main className="page-shell community-page students-page">
+      <header className="community-heading"><p className="eyebrow">Сообщество</p><h1>Создатели<br />TokenAI</h1><p className="hero-text">Открывайте профили участников, их направления и опубликованные работы.</p></header>
+      <nav className="secondary-nav community-tabs" aria-label="Раздел сообщества">
         <Link className="active" href="/students" aria-current="page">Студенты</Link>
         <Link href="/showcase">Работы</Link>
       </nav>
-      <form className="card filter-row directory-filters">
-        <input name="q" defaultValue={q} maxLength={80} placeholder="Имя или username" />
-        <select name="topic" defaultValue={topic}><option value="">Все интересы</option>{((topicRows ?? []) as PublicTopic[]).map((item) => <option value={item.slug} key={item.id}>{item.name}</option>)}</select>
-        <button className="button">Найти</button>
+      <form className="community-filter" role="search">
+        <label className="community-search"><Search aria-hidden="true" size={19} /><span className="visually-hidden">Поиск студента</span><input name="q" defaultValue={q} maxLength={80} placeholder="Имя или @username" /></label>
+        <label className="community-select"><SlidersHorizontal aria-hidden="true" size={18} /><span className="visually-hidden">Фильтр по интересам</span><select name="topic" defaultValue={topic}><option value="">Все интересы</option>{((topicRows ?? []) as PublicTopic[]).map((item) => <option value={item.slug} key={item.id}>{item.name}</option>)}</select></label>
+        <button className="button" type="submit">Найти</button>
       </form>
-      <p className="muted">Найдено профилей: {result.total}</p>
-      <section className="course-grid">{result.items.length ? result.items.map((student) => <StudentCard student={student} key={student.id} />) : <div className="card center"><p className="muted">Публичных профилей по этим условиям нет.</p></div>}</section>
+      <div className="community-result-count"><span>Публичные профили</span><strong>{result.total}</strong></div>
+      <section className="student-list" aria-label="Список студентов">{result.items.length ? result.items.map((student) => <StudentCard student={student} key={student.id} />) : <div className="community-empty"><span aria-hidden="true">0</span><h2>Профили не найдены</h2><p className="muted">Измените имя или выбранный интерес.</p><Link className="button secondary" href="/students">Сбросить фильтры</Link></div>}</section>
       {totalPages > 1 && <nav className="pagination">{result.page > 1 && <Link className="button secondary" href={pageHref({ q, topic }, result.page - 1)}>← Назад</Link>}<span>Страница {result.page} из {totalPages}</span>{result.page < totalPages && <Link className="button secondary" href={pageHref({ q, topic }, result.page + 1)}>Далее →</Link>}</nav>}
     </main>
   );

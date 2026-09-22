@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { ShowcaseWorkForm } from "@/components/showcase-work-form";
 import { requireUser } from "@/lib/auth";
 import type { PublicTopic } from "@/lib/showcase";
@@ -26,5 +28,5 @@ export default async function NewShowcaseWorkPage({ searchParams }: PageProps<"/
     sourceTitle = typedSource.assignment[0]?.lesson[0]?.title ?? "Принятое задание";
   }
 
-  return <main className="page-shell narrow-content stack roomy"><header className="stack compact"><p className="eyebrow">Showcase</p><h1>Добавить работу</h1><p className="muted">Сохраните черновик или отправьте работу на модерацию.</p></header><ShowcaseWorkForm userId={user.id} topics={(topics ?? []) as PublicTopic[]} sourceSubmissionId={sourceId} sourceTitle={sourceTitle} /></main>;
+  return <main className="page-shell showcase-editor-page"><Link className="player-back-link" href="/profile"><ArrowLeft aria-hidden="true" size={17} />Вернуться в профиль</Link><header className="showcase-editor-heading"><p className="eyebrow">Портфолио</p><h1>Добавить работу</h1><p className="hero-text">Соберите страницу проекта, сохраните черновик или отправьте готовую работу на модерацию.</p></header><ShowcaseWorkForm userId={user.id} topics={(topics ?? []) as PublicTopic[]} sourceSubmissionId={sourceId} sourceTitle={sourceTitle} /></main>;
 }

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import type { PublicStudent } from "@/lib/showcase";
 import { excerpt } from "@/lib/showcase";
 import { getAvatarUrl } from "@/lib/storage";
@@ -8,20 +9,20 @@ export function StudentCard({ student }: { student: PublicStudent }) {
   const avatarUrl = getAvatarUrl(student.avatarPath);
   const name = student.displayName ?? student.username;
   return (
-    <article className="card student-card stack">
-      <div className="student-card-header">
-        <div className="avatar student-avatar">
-          {avatarUrl ? <Image src={avatarUrl} alt={`Аватар ${name}`} width={64} height={64} unoptimized /> : <span>{name.charAt(0).toUpperCase()}</span>}
+    <Link className="student-list-link" href={`/students/${student.username}`}>
+      <article className="student-list-row">
+        <div className="avatar student-list-avatar">
+          {avatarUrl ? <Image src={avatarUrl} alt="" width={72} height={72} unoptimized /> : <span>{name.charAt(0).toUpperCase()}</span>}
         </div>
-        <div>
+        <div className="student-list-identity">
           <h2>{name}</h2>
           <p className="handle">@{student.username}</p>
         </div>
-      </div>
-      {student.bio && <p className="muted">{excerpt(student.bio)}</p>}
-      <div className="tag-list">{student.topics.map((topic) => <span className="tag" key={topic.id}>{topic.name}</span>)}</div>
-      <p className="field-help">Завершено курсов: {student.completedCourseCount} · Работ: {student.publishedWorkCount}</p>
-      <Link href={`/students/${student.username}`}>Открыть профиль</Link>
-    </article>
+        <div className="student-list-about">
+          {student.bio ? <p>{excerpt(student.bio, 120)}</p> : student.topics.length ? <div className="student-topic-list">{student.topics.slice(0, 3).map((topic) => <span key={topic.id}>{topic.name}</span>)}</div> : <p className="muted">Публичный профиль TokenAI</p>}
+        </div>
+        <ArrowUpRight className="student-row-arrow" aria-hidden="true" size={20} />
+      </article>
+    </Link>
   );
 }

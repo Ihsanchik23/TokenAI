@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Search, SlidersHorizontal, UserRound } from "lucide-react";
 import { ShowcaseCard } from "@/components/showcase-card";
 import { getShowcaseCoverUrls, type PublicTopic, type ShowcaseWork } from "@/lib/showcase";
 import { createClient } from "@/lib/supabase/server";
@@ -31,20 +32,20 @@ export default async function ShowcasePage({ searchParams }: PageProps<"/showcas
   const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
 
   return (
-    <main className="page-shell stack roomy">
-      <header className="stack compact"><p className="eyebrow">Работы студентов</p><h1>TokenAI Showcase</h1><p className="muted">Опубликованные проекты участников, новые работы показаны первыми.</p></header>
-      <nav className="secondary-nav" aria-label="Раздел сообщества">
+    <main className="page-shell community-page showcase-page">
+      <header className="community-heading showcase-heading"><p className="eyebrow">Работы студентов</p><h1>Создано<br />с AI.</h1><p className="hero-text">Галерея опубликованных проектов сообщества TokenAI.</p></header>
+      <nav className="secondary-nav community-tabs" aria-label="Раздел сообщества">
         <Link href="/students">Студенты</Link>
         <Link className="active" href="/showcase" aria-current="page">Работы</Link>
       </nav>
-      <form className="card showcase-filters">
-        <input name="q" defaultValue={q} maxLength={100} placeholder="Поиск по работам" />
-        <select name="topic" defaultValue={topic}><option value="">Все категории</option>{((topicRows ?? []) as PublicTopic[]).map((item) => <option value={item.slug} key={item.id}>{item.name}</option>)}</select>
-        <input name="author" defaultValue={author} maxLength={48} placeholder="Username автора" />
-        <button className="button">Применить</button>
+      <form className="community-filter showcase-filter" role="search">
+        <label className="community-search"><Search aria-hidden="true" size={19} /><span className="visually-hidden">Поиск по работам</span><input name="q" defaultValue={q} maxLength={100} placeholder="Название работы" /></label>
+        <label className="community-select"><SlidersHorizontal aria-hidden="true" size={18} /><span className="visually-hidden">Категория</span><select name="topic" defaultValue={topic}><option value="">Все категории</option>{((topicRows ?? []) as PublicTopic[]).map((item) => <option value={item.slug} key={item.id}>{item.name}</option>)}</select></label>
+        <label className="community-search author-search"><UserRound aria-hidden="true" size={18} /><span className="visually-hidden">Username автора</span><input name="author" defaultValue={author} maxLength={48} placeholder="@автор" /></label>
+        <button className="button" type="submit">Показать</button>
       </form>
-      <p className="muted">Опубликовано работ: {result.total}</p>
-      <section className="course-grid">{works.length ? works.map((work) => <ShowcaseCard work={work} key={work.id} />) : <div className="card center"><p className="muted">Работ по этим условиям нет.</p></div>}</section>
+      <div className="community-result-count"><span>Опубликованные работы</span><strong>{result.total}</strong></div>
+      <section className="showcase-gallery" aria-label="Галерея работ">{works.length ? works.map((work, index) => <ShowcaseCard work={work} priority={index < 2} key={work.id} />) : <div className="community-empty"><span aria-hidden="true">0</span><h2>Работы не найдены</h2><p className="muted">Измените фильтры или вернитесь ко всем работам.</p><Link className="button secondary" href="/showcase">Сбросить фильтры</Link></div>}</section>
       {totalPages > 1 && <nav className="pagination">{result.page > 1 && <Link className="button secondary" href={pageHref({ q, topic, author }, result.page - 1)}>← Назад</Link>}<span>Страница {result.page} из {totalPages}</span>{result.page < totalPages && <Link className="button secondary" href={pageHref({ q, topic, author }, result.page + 1)}>Далее →</Link>}</nav>}
     </main>
   );

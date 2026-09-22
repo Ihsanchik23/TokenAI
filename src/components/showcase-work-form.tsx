@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AlertTriangle, CheckCircle2, Clock3, ImagePlus, Save, Send } from "lucide-react";
 import { saveShowcaseWorkAction } from "@/app/showcase/actions";
 import type { PublicTopic } from "@/lib/showcase";
 import { createClient } from "@/lib/supabase/client";
@@ -42,6 +43,11 @@ export function ShowcaseWorkForm({
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
 
   async function save(formData: FormData) {
     const submit = formData.get("intent") === "submit";
@@ -102,17 +108,26 @@ export function ShowcaseWorkForm({
   }
 
   return (
-    <form ref={formRef} className="card stack roomy" action={(formData) => void save(formData)}>
-      {sourceTitle && <p className="notice">Работа создаётся из принятого задания: <strong>{sourceTitle}</strong>.</p>}
-      {work?.moderation_comment && <p className="notice"><strong>Комментарий модератора:</strong> {work.moderation_comment}</p>}
-      <label className="field"><span>Название</span><input name="title" required minLength={3} maxLength={120} defaultValue={work?.title ?? sourceTitle ?? ""} /></label>
-      <label className="field"><span>Описание</span><textarea name="description" rows={8} maxLength={5000} defaultValue={work?.description ?? ""} /></label>
-      <label className="field"><span>Категория</span><select name="topicId" required defaultValue={work?.topic_id ?? ""}><option value="" disabled>Выберите тему</option>{topics.map((topic) => <option value={topic.id} key={topic.id}>{topic.name}</option>)}</select></label>
-      <label className="field"><span>Ссылка на проект</span><input name="externalUrl" type="url" maxLength={2000} placeholder="https://…" defaultValue={work?.external_url ?? ""} /></label>
-      <label className="field"><span>Обложка</span><input name="cover" type="file" accept="image/jpeg,image/png,image/webp" /><small className="field-help">JPG, PNG или WebP, до 5 МБ.</small></label>
-      {currentCoverUrl && <div className="showcase-cover-preview"><Image src={currentCoverUrl} alt="Текущая обложка" width={480} height={270} unoptimized /><label className="toggle-row"><input name="removeCover" type="checkbox" /><span>Удалить текущую обложку</span></label></div>}
-      {message && <p className="notice" aria-live="polite">{message}</p>}
-      <div className="actions"><button className="button secondary" name="intent" value="draft" disabled={pending || uploading}>{pending ? "Сохраняем…" : "Сохранить черновик"}</button><button className="button" name="intent" value="submit" disabled={pending || uploading}>{uploading ? "Загружаем…" : "Отправить на модерацию"}</button></div>
+    <form ref={formRef} className="showcase-editor-form" action={(formData) => void save(formData)}>
+      <div className="showcase-editor-media">
+        <div className="showcase-editor-preview">
+          {previewUrl || currentCoverUrl ? <Image src={previewUrl ?? currentCoverUrl!} alt="Обложка работы" fill sizes="(max-width: 900px) 100vw, 42vw" unoptimized={Boolean(previewUrl)} /> : <div className="showcase-missing-media"><ImagePlus aria-hidden="true" size={34} /><span>Добавьте обложку</span><small>Она станет главным изображением работы</small></div>}
+        </div>
+        <label className="cover-upload-button"><ImagePlus aria-hidden="true" size={18} /><span>{previewUrl || currentCoverUrl ? "Заменить обложку" : "Выбрать обложку"}</span><input className="visually-hidden" name="cover" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (previewUrl) URL.revokeObjectURL(previewUrl); setPreviewUrl(file ? URL.createObjectURL(file) : null); }} /></label>
+        <small className="field-help">JPG, PNG или WebP, до 5 МБ.</small>
+        {currentCoverUrl && <label className="remove-cover-toggle"><input name="removeCover" type="checkbox" /><span>Удалить текущую обложку</span></label>}
+      </div>
+
+      <div className="showcase-editor-fields">
+        <header><div><p className="eyebrow">Showcase</p><h2>{work ? "Редактирование работы" : "Новая работа"}</h2></div><span className={`moderation-status ${work?.status ?? "draft"}`}>{work?.status === "pending" ? <Clock3 aria-hidden="true" size={14} /> : work?.status === "rejected" ? <AlertTriangle aria-hidden="true" size={14} /> : <CheckCircle2 aria-hidden="true" size={14} />}{work?.status === "pending" ? "На модерации" : work?.status === "rejected" ? "Отклонено" : "Черновик"}</span></header>
+        {sourceTitle && <p className="source-assignment-note">Работа создаётся из принятого задания: <strong>{sourceTitle}</strong>.</p>}
+        {work?.moderation_comment && <div className="moderation-feedback"><AlertTriangle aria-hidden="true" size={20} /><p><strong>Комментарий модератора</strong><span>{work.moderation_comment}</span></p></div>}
+        <label className="field"><span>Название</span><input name="title" required minLength={3} maxLength={120} defaultValue={work?.title ?? sourceTitle ?? ""} placeholder="Название проекта" /></label>
+        <label className="field"><span>Описание</span><textarea name="description" rows={8} maxLength={5000} defaultValue={work?.description ?? ""} placeholder="Расскажите о работе, процессе и результате" /></label>
+        <div className="showcase-form-grid"><label className="field"><span>Категория</span><select name="topicId" required defaultValue={work?.topic_id ?? ""}><option value="" disabled>Выберите тему</option>{topics.map((topic) => <option value={topic.id} key={topic.id}>{topic.name}</option>)}</select></label><label className="field"><span>Ссылка на проект</span><input name="externalUrl" type="url" maxLength={2000} placeholder="https://…" defaultValue={work?.external_url ?? ""} /></label></div>
+        {message && <p className="notice" aria-live="polite">{message}</p>}
+        <div className="showcase-editor-actions"><button className="button secondary" name="intent" value="draft" disabled={pending || uploading}><Save aria-hidden="true" size={18} />{pending ? "Сохраняем…" : "Сохранить черновик"}</button><button className="button" name="intent" value="submit" disabled={pending || uploading}><Send aria-hidden="true" size={18} />{uploading ? "Загружаем…" : "Отправить на модерацию"}</button></div>
+      </div>
     </form>
   );
 }

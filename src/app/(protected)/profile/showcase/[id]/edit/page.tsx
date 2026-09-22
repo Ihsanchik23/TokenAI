@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { ShowcaseWorkForm, type EditableShowcaseWork } from "@/components/showcase-work-form";
 import { requireUser } from "@/lib/auth";
 import { getShowcaseCoverUrls, type PublicTopic } from "@/lib/showcase";
@@ -16,5 +18,5 @@ export default async function EditShowcaseWorkPage({ params }: PageProps<"/profi
   ]);
   if (!work || !["draft", "pending", "rejected"].includes(work.status)) notFound();
   const covers = await getShowcaseCoverUrls(supabase, [work.cover_path]);
-  return <main className="page-shell narrow-content stack roomy"><header className="stack compact"><p className="eyebrow">Showcase</p><h1>Редактировать работу</h1><p className="muted">Статус: {work.status}</p></header><ShowcaseWorkForm userId={user.id} topics={(topics ?? []) as PublicTopic[]} work={work as EditableShowcaseWork} currentCoverUrl={work.cover_path ? covers.get(work.cover_path) ?? null : null} /></main>;
+  return <main className="page-shell showcase-editor-page"><Link className="player-back-link" href="/profile"><ArrowLeft aria-hidden="true" size={17} />Вернуться в профиль</Link><header className="showcase-editor-heading"><p className="eyebrow">Портфолио</p><h1>Редактировать работу</h1><p className="hero-text">Обновите материалы и повторно отправьте работу, если требуется доработка.</p></header><ShowcaseWorkForm userId={user.id} topics={(topics ?? []) as PublicTopic[]} work={work as EditableShowcaseWork} currentCoverUrl={work.cover_path ? covers.get(work.cover_path) ?? null : null} /></main>;
 }
