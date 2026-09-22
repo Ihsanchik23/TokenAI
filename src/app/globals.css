@@ -439,6 +439,8 @@ select:focus {
   grid-template-columns: minmax(180px, 1fr) 220px auto;
 }
 
+.assignment-filters { grid-template-columns: repeat(3, minmax(160px, 1fr)) auto; }
+
 .catalog-filters {
   grid-template-columns: 2fr repeat(4, 1fr) auto;
 }
