@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
+import { StudioNavigation } from "@/components/studio-navigation";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const staff = await requireStaff();
-  return <main className="page-shell admin-shell"><header className="admin-header"><div><p className="eyebrow">Панель {staff.role === "admin" ? "администратора" : "преподавателя"}</p><h1>TokenAI Studio</h1></div><nav className="actions"><Link href="/admin">Обзор</Link><Link href="/admin/courses">Курсы</Link><Link href="/admin/submissions">Задания</Link><Link href="/admin/showcase">Showcase</Link><Link href="/admin/analytics">Аналитика</Link>{staff.role === "admin" && <Link href="/admin/access">Выдать доступ</Link>}<Link href="/courses">Каталог</Link></nav></header>{children}</main>;
+  return <main className="studio-shell"><StudioNavigation isAdmin={staff.role === "admin"} /><div className="studio-workspace"><header className="studio-topbar"><p>{staff.role === "admin" ? "Администратор" : "Преподаватель"}</p><span>TokenAI Studio</span></header>{children}</div></main>;
 }

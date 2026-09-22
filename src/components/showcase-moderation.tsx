@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Check, X } from "lucide-react";
 import { moderateShowcaseWorkAction } from "@/app/showcase/actions";
 
 export function ShowcaseModeration({ workId }: { workId: string }) {
@@ -20,9 +21,9 @@ export function ShowcaseModeration({ workId }: { workId: string }) {
   }
 
   return (
-    <div className="stack compact">
-      <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={3} maxLength={4000} placeholder="Комментарий модератора; обязателен при отклонении" />
-      <div className="actions"><button className="button small" type="button" disabled={pending} onClick={() => moderate("published")}>Опубликовать</button><button className="button small secondary" type="button" disabled={pending} onClick={() => moderate("rejected")}>Отклонить</button></div>
+    <div className="moderation-form">
+      <label className="field"><span>Комментарий модератора</span><textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={4} maxLength={4000} placeholder="Обязателен при отклонении" /></label>
+      <div><button className="button small" type="button" disabled={pending} onClick={() => moderate("published")}><Check aria-hidden="true" size={17} />Опубликовать</button><button className="button small secondary" type="button" disabled={pending} onClick={() => moderate("rejected")}><X aria-hidden="true" size={17} />Отклонить</button></div>
       {message && <p className="field-help" aria-live="polite">{message}</p>}
     </div>
   );

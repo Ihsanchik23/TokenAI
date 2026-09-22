@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Check, RotateCcw } from "lucide-react";
 import { reviewAssignmentAction } from "@/app/learning/assignment-actions";
 
 export function AdminSubmissionReview({ submissionId, disabled }: { submissionId: string; disabled: boolean }) {
@@ -20,5 +21,5 @@ export function AdminSubmissionReview({ submissionId, disabled }: { submissionId
   }
 
   if (disabled) return <p className="field-help">Проверять можно только последнюю отправленную попытку.</p>;
-  return <div className="stack compact"><textarea rows={3} maxLength={4000} placeholder="Комментарий преподавателя" value={comment} onChange={(event) => setComment(event.target.value)} /><div className="actions"><button className="button small" type="button" disabled={pending} onClick={() => review("approved")}>Принять</button><button className="button small secondary" type="button" disabled={pending} onClick={() => review("needs_revision")}>На доработку</button></div>{message && <p className="field-help" aria-live="polite">{message}</p>}</div>;
+  return <div className="submission-review-form"><label className="field"><span>Комментарий студенту</span><textarea rows={5} maxLength={4000} placeholder="Что получилось и что нужно исправить" value={comment} onChange={(event) => setComment(event.target.value)} /></label><div><button className="button small" type="button" disabled={pending} onClick={() => review("approved")}><Check aria-hidden="true" size={17} />Принять</button><button className="button small secondary" type="button" disabled={pending} onClick={() => review("needs_revision")}><RotateCcw aria-hidden="true" size={17} />На доработку</button></div>{message && <p className="field-help" aria-live="polite">{message}</p>}</div>;
 }

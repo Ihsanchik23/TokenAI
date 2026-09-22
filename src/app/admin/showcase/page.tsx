@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowUpRight, ImageIcon, UserRound } from "lucide-react";
 import { ShowcaseModeration } from "@/components/showcase-moderation";
 import { getShowcaseCoverUrls } from "@/lib/showcase";
 import { createClient } from "@/lib/supabase/server";
@@ -35,15 +36,15 @@ export default async function AdminShowcasePage() {
   const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
 
   return (
-    <section className="stack roomy">
-      <div><p className="eyebrow">Модерация</p><h2>Showcase</h2><p className="muted">Администратор видит все работы; преподаватель — работы из заданий своих курсов.</p></div>
-      <div className="stack">{rows.length ? rows.map((work) => {
+    <section className="studio-page studio-moderation-page">
+      <header className="studio-page-heading"><div><p className="eyebrow">Модерация</p><h1>Showcase</h1><p>Администратор видит все работы; преподаватель — работы из заданий своих курсов.</p></div><span className="studio-heading-count">{rows.length}</span></header>
+      <div className="moderation-grid">{rows.length ? rows.map((work) => {
         const author = profileById.get(work.user_id);
         const lesson = work.submission[0]?.assignment[0]?.lesson[0];
         const course = lesson?.module[0]?.course[0];
         const coverUrl = work.cover_path ? covers.get(work.cover_path) : null;
-        return <article className="card moderation-work" key={work.id}><div>{coverUrl ? <Image src={coverUrl} alt={`Обложка ${work.title}`} width={480} height={270} unoptimized /> : <div className="cover-placeholder">Showcase</div>}</div><div className="stack"><div><p className="eyebrow">{work.topic[0]?.name ?? "Без категории"}</p><h3>{work.title}</h3><p className="field-help">{author?.display_name ?? `@${author?.username ?? "student"}`} · {new Date(work.created_at).toLocaleString("ru-RU")}</p></div>{work.description && <p>{work.description}</p>}{course && <p className="notice">{course.title} · {lesson.title}</p>}{work.external_url && <a href={work.external_url} target="_blank" rel="noopener noreferrer">Открыть проект ↗</a>}<ShowcaseModeration workId={work.id} /></div></article>;
-      }) : <div className="card center"><p className="muted">Работ на модерации нет.</p><Link href="/showcase">Открыть публичный Showcase</Link></div>}</div>
+        return <article className="moderation-item" key={work.id}><div className="moderation-media">{coverUrl ? <Image src={coverUrl} alt={`Обложка работы «${work.title}»`} fill sizes="(max-width: 800px) 100vw, 42vw" /> : <div className="showcase-missing-media"><ImageIcon aria-hidden="true" size={30} /><span>Без обложки</span></div>}<span className="studio-status pending">На модерации</span></div><div className="moderation-copy"><div className="moderation-title"><span>{work.topic[0]?.name ?? "Без категории"}</span><h2>{work.title}</h2></div><div className="moderation-author"><UserRound aria-hidden="true" size={17} /><span><strong>{author?.display_name ?? `@${author?.username ?? "student"}`}</strong><small>{new Date(work.created_at).toLocaleString("ru-RU")}</small></span></div>{work.description ? <p className="moderation-description">{work.description}</p> : <p className="moderation-description muted">Описание не добавлено.</p>}<dl className="moderation-source"><div><dt>Источник</dt><dd>{course ? `${course.title} · ${lesson.title}` : "Самостоятельная работа"}</dd></div></dl>{work.external_url && <a className="moderation-project-link" href={work.external_url} target="_blank" rel="noopener noreferrer">Открыть проект<ArrowUpRight aria-hidden="true" size={16} /></a>}<ShowcaseModeration workId={work.id} /></div></article>;
+      }) : <div className="studio-empty moderation-empty"><ImageIcon aria-hidden="true" size={28} /><h2>Очередь пуста</h2><p>Работ на модерации сейчас нет.</p><Link href="/showcase">Открыть публичный Showcase<ArrowUpRight aria-hidden="true" size={16} /></Link></div>}</div>
     </section>
   );
 }
