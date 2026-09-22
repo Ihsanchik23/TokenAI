@@ -1,13 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { getOptionalUser } from "@/lib/auth";
 import { getCourseCoverUrl } from "@/lib/course-utils";
 import { getLearningState } from "@/lib/learning";
 import { createClient } from "@/lib/supabase/server";
 
-async function getContinueCourse() {
-  const user = await getOptionalUser();
+async function getContinueCourse(user: Awaited<ReturnType<typeof getOptionalUser>>) {
   if (!user) return null;
   const supabase = await createClient();
   const { data: enrollments } = await supabase
@@ -31,33 +30,31 @@ async function getContinueCourse() {
 const faqs = [
   { question: "Кому подходит TokenAI?", answer: "Тем, кто хочет осваивать AI-инструменты через последовательные уроки и практические задания — от первого знакомства до законченных работ." },
   { question: "Как проходит обучение?", answer: "Вы проходите теорию и видео, выполняете тесты и задания, а прогресс сохраняется в вашем профиле. К следующему обязательному уроку можно перейти после завершения текущего." },
-  { question: "Когда появляется сертификат?", answer: "После выполнения всех обязательных условий курса. Если в программе есть проверяемые задания, сертификат станет доступен после их одобрения преподавателем." },
+  { question: "Нужно ли уже разбираться в ИИ, чтобы начать обучение?", answer: "Нет. Курсы TokenAI рассчитаны так, чтобы вы могли начать с базового уровня и постепенно перейти к реальному применению AI-инструментов в работе и проектах." },
 ] as const;
 
 export default async function Home() {
-  const continuing = await getContinueCourse();
+  const user = await getOptionalUser();
+  const continuing = await getContinueCourse(user);
   const cover = continuing ? getCourseCoverUrl(continuing.course.cover_path) : null;
+  const homeMediaUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/site-assets/home`;
 
   return (
     <main className="home-page">
-      <section className="home-hero page-shell">
-        <div className="home-hero-copy">
-          <p className="eyebrow"><Sparkles aria-hidden="true" size={14} />Практическое обучение AI</p>
-          <h1>Осваивайте AI.<br />Создавайте настоящее.</h1>
-          <p className="hero-text">Курсы по современным AI-инструментам, в которых теория сразу превращается в практику и готовые работы.</p>
-          <div className="actions">
-            <Link className="button" href="/courses">Смотреть курсы<ArrowRight aria-hidden="true" size={18} /></Link>
-            <Link className="button ghost" href="/students">Работы сообщества</Link>
-          </div>
-        </div>
-        <div className="home-hero-visual" aria-label="Учебный процесс TokenAI">
-          <div className="hero-orbit hero-orbit-one" />
-          <div className="hero-orbit hero-orbit-two" />
-          <div className="hero-ai-mark">AI<span>→</span></div>
-          <div className="hero-learning-strip">
-            <span><Check aria-hidden="true" size={15} />Смотрите</span>
-            <span><Check aria-hidden="true" size={15} />Практикуйтесь</span>
-            <span><Check aria-hidden="true" size={15} />Создавайте</span>
+      <section className="home-video-hero" aria-labelledby="home-hero-heading">
+        <video className="home-hero-video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true" tabIndex={-1}>
+          <source src={`${homeMediaUrl}/hero-mobile.mp4`} media="(max-width: 700px)" type="video/mp4" />
+          <source src={`${homeMediaUrl}/hero-desktop.mp4`} type="video/mp4" />
+        </video>
+        <div className="home-hero-shade" aria-hidden="true" />
+        <div className="home-hero-content page-shell">
+          <div className="home-hero-copy">
+            <h1 id="home-hero-heading">Используйте ИИ правильно</h1>
+            <p>Курсы по современным AI-инструментам, которые обучат вас как использовать их в работе.</p>
+            <div className="home-hero-actions">
+              <Link className="button" href="/courses">Смотреть курсы<ArrowRight aria-hidden="true" size={18} /></Link>
+              {!user && <Link className="button secondary home-login-button" href="/login">Войти</Link>}
+            </div>
           </div>
         </div>
       </section>
@@ -80,31 +77,28 @@ export default async function Home() {
         </section>
       )}
 
-      <section className="home-story page-shell" aria-labelledby="about-heading">
-        <div className="home-section-index">01</div>
-        <div className="home-story-copy">
+      <section className="home-description page-shell" aria-labelledby="about-heading">
+        <div className="home-description-heading">
           <p className="eyebrow">Что такое TokenAI</p>
-          <h2 id="about-heading">Не библиотека лекций.<br />Среда для практики.</h2>
-          <p>TokenAI объединяет структурированные уроки, проверку знаний и практические задания в одном учебном маршруте. Вы видите прогресс, возвращаетесь к текущему уроку и собираете результаты обучения в профиле.</p>
+          <h2 id="about-heading">Платформа курсов<br />по <span>искусственному интеллекту.</span></h2>
         </div>
-        <div className="home-process" aria-label="Этапы обучения">
-          <div><span>01</span><strong>Изучить</strong><p>Короткая теория и видео без лишнего.</p></div>
-          <div><span>02</span><strong>Применить</strong><p>Тесты и задания внутри курса.</p></div>
-          <div><span>03</span><strong>Завершить</strong><p>Прогресс, обратная связь и сертификат.</p></div>
+        <div className="home-description-copy">
+          <p>TokenAI объединяет теорию, практические задания, тесты и видеоуроки, чтобы обучение превращалось в реальный навык.</p>
+          <p>ИИ не сделает работу за человека. <strong>ИИ — это инструмент.</strong> Мы помогаем понять, как применять AI-инструменты в работе, проектах и настоящих задачах.</p>
         </div>
       </section>
 
-      <section className="founders-section page-shell" aria-labelledby="founders-heading">
-        <div className="home-section-index">02</div>
-        <div className="founders-heading"><p className="eyebrow">Основатели</p><h2 id="founders-heading">Люди за TokenAI</h2></div>
-        <div className="founders-placeholder">
-          <div className="founders-monogram" aria-hidden="true">T</div>
-          <p>Раздел подготовлен для официальной информации об основателях. Персональные данные появятся после публикации командой TokenAI.</p>
+      <section className="creators-section page-shell" aria-labelledby="creators-heading">
+        <div className="creators-heading"><p className="eyebrow">Создатели</p><h2 id="creators-heading">Люди ТокенИИ</h2></div>
+        <div className="creators-stage">
+          <div className="creator-glow creator-glow-one" aria-hidden="true" />
+          <div className="creator-glow creator-glow-two" aria-hidden="true" />
+          <Image className="creator-card creator-card-one" src="/home/creator-ish.png" alt="Instagram-карточка создателя TokenAI" width={882} height={1290} sizes="(max-width: 700px) 54vw, (max-width: 1100px) 34vw, 310px" />
+          <Image className="creator-card creator-card-two" src="/home/creator-ya.png" alt="Instagram-карточка создателя TokenAI" width={882} height={1290} sizes="(max-width: 700px) 54vw, (max-width: 1100px) 34vw, 310px" />
         </div>
       </section>
 
       <section className="faq-section page-shell" aria-labelledby="faq-heading">
-        <div className="home-section-index">03</div>
         <div><p className="eyebrow">FAQ</p><h2 id="faq-heading">Частые вопросы</h2></div>
         <div className="faq-list">
           {faqs.map((faq, index) => (

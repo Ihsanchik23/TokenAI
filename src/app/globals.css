@@ -2496,3 +2496,109 @@ input[type="radio"] {
   .course-status-actions button { flex: 1; }
   .quiz-editor-option { grid-template-columns: 26px minmax(0, 1fr) 28px; }
 }
+
+/* Home page video redesign */
+
+.home-video-hero {
+  align-items: center;
+  display: flex;
+  isolation: isolate;
+  justify-content: center;
+  min-height: calc(100svh - var(--shell-height));
+  overflow: hidden;
+  position: relative;
+}
+.home-hero-video { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; z-index: -2; }
+.home-hero-shade {
+  background:
+    linear-gradient(180deg, rgba(4, 7, 5, .38) 0%, rgba(4, 7, 5, .54) 45%, rgba(4, 7, 5, .82) 100%),
+    linear-gradient(90deg, rgba(5, 8, 6, .6), rgba(5, 8, 6, .14) 60%, rgba(5, 8, 6, .42));
+  inset: 0;
+  position: absolute;
+  z-index: -1;
+}
+.home-hero-content { align-items: center; display: flex; justify-content: center; min-height: inherit; padding-bottom: clamp(58px, 9vw, 110px); padding-top: clamp(58px, 9vw, 110px); text-align: center; }
+.home-hero-copy { align-items: center; display: flex; flex-direction: column; gap: clamp(22px, 3vw, 32px); max-width: 980px; }
+.home-hero-copy h1 { color: #fff; font-size: clamp(3.6rem, 8.4vw, 9.2rem); letter-spacing: -.085em; line-height: .86; text-wrap: balance; }
+.home-hero-copy > p { color: rgba(255, 255, 255, .8); font-size: clamp(1rem, 1.7vw, 1.28rem); line-height: 1.55; max-width: 610px; text-wrap: balance; }
+.home-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.home-hero-actions .button { min-height: 48px; padding-inline: 20px; }
+.home-login-button { background: rgba(9, 12, 10, .42); border-color: rgba(255, 255, 255, .38); color: #fff; backdrop-filter: blur(10px); }
+.home-login-button:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .7); color: #fff; }
+
+.home-description,
+.creators-section,
+.faq-section { border-top: 1px solid var(--border); }
+.home-description { display: grid; gap: clamp(32px, 7vw, 116px); grid-template-columns: minmax(0, 1.25fr) minmax(260px, .75fr); }
+.home-description-heading { display: grid; gap: 18px; }
+.home-description-heading h2,
+.creators-heading h2,
+.faq-section h2 { font-size: clamp(2.55rem, 5.6vw, 6.1rem); letter-spacing: -.075em; line-height: .91; text-wrap: balance; }
+.home-description-heading h2 span { color: var(--accent); }
+.home-description-copy { align-content: end; display: grid; gap: 20px; padding-bottom: 6px; }
+.home-description-copy p { color: var(--text-secondary); font-size: clamp(.98rem, 1.3vw, 1.12rem); line-height: 1.72; }
+.home-description-copy strong { color: var(--text-primary); font-weight: 700; }
+
+.creators-section { align-items: center; display: grid; gap: clamp(34px, 7vw, 104px); grid-template-columns: minmax(230px, .6fr) minmax(420px, 1.4fr); }
+.creators-heading { align-content: start; display: grid; gap: 14px; }
+.creators-stage { height: clamp(470px, 47vw, 680px); isolation: isolate; margin-right: clamp(0px, 3vw, 44px); position: relative; }
+.creator-card { border-radius: clamp(16px, 2vw, 25px); box-shadow: 0 30px 70px rgba(0, 0, 0, .28); height: auto; position: absolute; transition: transform 260ms ease; width: clamp(245px, 27vw, 356px); z-index: 2; }
+.creator-card-one { left: 5%; top: 7%; transform: rotate(-5deg); }
+.creator-card-two { right: 2%; top: 20%; transform: rotate(5deg); z-index: 3; }
+.creators-stage:hover .creator-card-one { transform: translate(-5px, -7px) rotate(-6deg); }
+.creators-stage:hover .creator-card-two { transform: translate(5px, -7px) rotate(6deg); }
+.creator-glow { background: var(--accent); border-radius: 50%; filter: blur(72px); opacity: .22; position: absolute; z-index: 1; }
+.creator-glow-one { height: 220px; left: 18%; top: 24%; width: 220px; }
+.creator-glow-two { height: 250px; right: 6%; top: 43%; width: 250px; }
+@media (prefers-reduced-motion: no-preference) {
+  .creator-card-one { animation: creator-float-one 6s ease-in-out infinite; }
+  .creator-card-two { animation: creator-float-two 7s ease-in-out -2s infinite; }
+}
+
+.faq-section { display: grid; gap: clamp(32px, 7vw, 112px); grid-template-columns: minmax(240px, .65fr) minmax(0, 1.35fr); }
+.faq-list { min-width: 0; }
+
+@keyframes creator-float-one {
+  50% { transform: translateY(-11px) rotate(-5.8deg); }
+}
+@keyframes creator-float-two {
+  50% { transform: translateY(-13px) rotate(5.8deg); }
+}
+
+@media (max-width: 900px) {
+  .home-video-hero { min-height: min(780px, calc(100svh - var(--shell-height))); }
+  .home-description,
+  .creators-section,
+  .faq-section { grid-template-columns: 1fr; }
+  .home-description-copy { max-width: 620px; }
+  .creators-stage { height: clamp(460px, 73vw, 630px); margin-inline: auto; max-width: 650px; width: 100%; }
+  .creator-card { width: clamp(230px, 43vw, 320px); }
+  .creator-card-one { left: 10%; }
+  .creator-card-two { right: 10%; }
+}
+
+@media (max-width: 700px) {
+  .home-video-hero { min-height: calc(100svh - var(--shell-height)); }
+  .home-hero-shade { background: linear-gradient(180deg, rgba(4, 7, 5, .44) 0%, rgba(4, 7, 5, .44) 44%, rgba(4, 7, 5, .88) 100%); }
+  .home-hero-content { align-items: flex-end; padding-bottom: max(74px, env(safe-area-inset-bottom)); padding-top: 45px; }
+  .home-hero-copy { gap: 20px; }
+  .home-hero-copy h1 { font-size: clamp(3.3rem, 15vw, 5rem); line-height: .88; }
+  .home-hero-copy > p { font-size: 1rem; max-width: 350px; }
+  .home-hero-actions { display: grid; grid-template-columns: 1fr; width: min(100%, 330px); }
+  .home-hero-actions .button { justify-content: center; width: 100%; }
+  .home-description-heading h2,
+  .creators-heading h2,
+  .faq-section h2 { font-size: clamp(2.65rem, 12vw, 4.25rem); }
+  .home-description-copy { gap: 16px; }
+  .creators-stage { height: min(119vw, 460px); max-width: 430px; overflow: hidden; }
+  .creator-card { width: min(55vw, 230px); }
+  .creator-card-one { left: 4%; top: 8%; }
+  .creator-card-two { right: 3%; top: 21%; }
+  .creator-glow-one { filter: blur(48px); height: 150px; width: 150px; }
+  .creator-glow-two { filter: blur(48px); height: 160px; width: 160px; }
+}
+
+@media (max-width: 390px) {
+  .home-hero-copy h1 { font-size: 3.25rem; }
+  .creators-stage { height: 430px; }
+}
