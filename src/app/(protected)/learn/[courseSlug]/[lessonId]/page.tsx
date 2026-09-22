@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft, ArrowRight, CheckCircle2, LockKeyhole } from "lucide-react";
 import { completeTheoryLessonAction } from "@/app/learning/actions";
 import { AssignmentLesson } from "@/components/assignment-lesson";
 import { LessonStart } from "@/components/lesson-start";
+import { LearningNavigation } from "@/components/learning-navigation";
 import { MarkdownContent } from "@/components/markdown-content";
 import { QuizLesson } from "@/components/quiz-lesson";
 import { YouTubeLearningPlayer } from "@/components/youtube-learning-player";
@@ -22,6 +24,7 @@ export default async function LearningLessonPage({ params, searchParams }: { par
   if (lesson.state === "locked") redirect(`/learn/${courseSlug}`);
   const previous = state.lessons[lessonIndex - 1];
   const next = state.lessons[lessonIndex + 1];
+  const currentModule = state.modules.find((item) => item.id === lesson.moduleId);
   const supabase = await createClient();
   let content: React.ReactNode;
 
@@ -65,5 +68,30 @@ export default async function LearningLessonPage({ params, searchParams }: { par
     }
   }
 
-  return <main className="page-shell learning-shell"><aside className="learning-sidebar stack"><Link href="/my-courses">← Мои курсы</Link><div><p className="eyebrow">{state.progressPercent}%</p><h2>{state.course.title}</h2><div className="progress-track"><span style={{ width: `${state.progressPercent}%` }} /></div><p className="field-help">{state.completedRequired} из {state.requiredTotal} обязательных</p></div>{state.modules.map((courseModule) => <section className="stack compact" key={courseModule.id}><strong>{courseModule.position}. {courseModule.title}</strong>{courseModule.lessons.map((item) => item.state === "locked" ? <span className="curriculum-link locked" key={item.id}>🔒 {item.title}</span> : <Link className={`curriculum-link ${item.id === lesson.id ? "current" : ""}`} href={`/learn/${courseSlug}/${item.id}`} key={item.id}>{item.state === "completed" ? "✓" : "○"} {item.title}</Link>)}</section>)}</aside><article className="learning-content stack roomy">{state.enrollment && lesson.state !== "completed" && <LessonStart lessonId={lesson.id} />}<header className="stack compact"><p className="eyebrow">{lesson.lesson_type} · {lesson.is_required ? "обязательный" : "необязательный"}</p><h1>{lesson.title}</h1>{lesson.description && <p className="hero-text">{lesson.description}</p>}</header>{query.error === "complete-failed" && <p className="notice">Не удалось завершить урок. Обновите страницу и попробуйте ещё раз.</p>}<section className="card">{content}</section>{lesson.lesson_type === "theory" && state.enrollment && lesson.state !== "completed" && <form action={completeTheoryLessonAction.bind(null, courseSlug, lesson.id)}><button className="button">Отметить урок завершённым</button></form>}{lesson.state === "completed" && <p className="notice success">Урок завершён.</p>}<nav className="lesson-navigation"><div>{previous && previous.state !== "locked" && <Link className="button secondary" href={`/learn/${courseSlug}/${previous.id}`}>← Предыдущий</Link>}</div><div>{next && next.state !== "locked" ? <Link className="button" href={`/learn/${courseSlug}/${next.id}`}>Следующий →</Link> : next ? <span className="muted">Следующий урок пока закрыт</span> : state.curriculumComplete ? <Link className="button" href={`/learn/${courseSlug}/complete`}>Итоги курса</Link> : null}</div></nav></article></main>;
+  const lessonLabels = { theory: "Теория", video: "Видео", quiz: "Тест", assignment: "Задание" } as const;
+
+  return (
+    <main className="page-shell learning-shell">
+      <LearningNavigation courseSlug={courseSlug} courseTitle={state.course.title} currentLessonId={lesson.id} modules={state.modules} progressPercent={state.progressPercent} progressLabel={`${state.completedRequired} из ${state.requiredTotal} обязательных`} />
+      <article className={`learning-content lesson-${lesson.lesson_type}`}>
+        {state.enrollment && lesson.state !== "completed" && <LessonStart lessonId={lesson.id} />}
+        <header className="lesson-heading">
+          <p className="lesson-context">{currentModule ? `Модуль ${currentModule.position} · ${currentModule.title}` : state.course.title}</p>
+          <div className="lesson-labels"><span>{lessonLabels[lesson.lesson_type]}</span><span>{lesson.is_required ? "Обязательный урок" : "Дополнительный урок"}</span></div>
+          <h1>{lesson.title}</h1>
+          {lesson.description && <p className="hero-text">{lesson.description}</p>}
+        </header>
+        {query.error === "complete-failed" && <p className="notice">Не удалось завершить урок. Обновите страницу и попробуйте ещё раз.</p>}
+        <section className="lesson-stage">{content}</section>
+        <div className="lesson-completion-action">
+          {lesson.lesson_type === "theory" && state.enrollment && lesson.state !== "completed" && <form action={completeTheoryLessonAction.bind(null, courseSlug, lesson.id)}><button className="button"><CheckCircle2 aria-hidden="true" size={18} />Отметить урок завершённым</button></form>}
+          {lesson.state === "completed" && <p className="completed-state"><CheckCircle2 aria-hidden="true" size={20} /><span><strong>Урок завершён</strong><small>Прогресс сохранён</small></span></p>}
+        </div>
+        <nav className="lesson-navigation" aria-label="Навигация между уроками">
+          <div>{previous && previous.state !== "locked" && <Link className="lesson-nav-link previous" href={`/learn/${courseSlug}/${previous.id}`}><ArrowLeft aria-hidden="true" size={18} /><span><small>Предыдущий</small>{previous.title}</span></Link>}</div>
+          <div>{next && next.state !== "locked" ? <Link className="lesson-nav-link next" href={`/learn/${courseSlug}/${next.id}`}><span><small>Следующий</small>{next.title}</span><ArrowRight aria-hidden="true" size={18} /></Link> : next ? <span className="lesson-nav-locked"><LockKeyhole aria-hidden="true" size={17} />Следующий урок пока закрыт</span> : state.curriculumComplete ? <Link className="button" href={`/learn/${courseSlug}/complete`}>Итоги курса<ArrowRight aria-hidden="true" size={18} /></Link> : null}</div>
+        </nav>
+      </article>
+    </main>
+  );
 }

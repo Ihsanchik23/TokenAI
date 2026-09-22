@@ -1,10 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowUpRight, Clock3, Star } from "lucide-react";
+import { CatalogFilters } from "@/components/catalog-filters";
 import { formatCoursePrice, getCourseCoverUrl } from "@/lib/course-utils";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CoursesPage({ searchParams }: { searchParams: Promise<{ q?: string; level?: string; access?: string; topic?: string; sort?: string }> }) {
-  const filters = await searchParams; const supabase = await createClient();
+  const filters = await searchParams;
+  const supabase = await createClient();
   const { data: topics } = await supabase.from("topics").select("id,name,slug").order("name");
   let ids: string[] | null = null;
   if (filters.topic) { const topic = topics?.find((item) => item.slug === filters.topic); if (topic) { const { data } = await supabase.from("course_topics").select("course_id").eq("topic_id", topic.id); ids = (data ?? []).map((row) => row.course_id); } }
@@ -15,5 +18,49 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   if (ids) query = ids.length ? query.in("id", ids) : query.eq("id", "00000000-0000-0000-0000-000000000000");
   query = filters.sort === "title" ? query.order("title") : query.order("created_at", { ascending: false });
   const { data: courses } = await query;
-  return <main className="page-shell stack roomy"><header className="stack compact"><p className="eyebrow">Каталог TokenAI</p><h1>Практические AI-курсы</h1><p className="hero-text">Выберите направление, уровень и формат доступа.</p></header><form className="card catalog-filters"><input name="q" placeholder="Найти курс" defaultValue={filters.q} /><select name="topic" defaultValue={filters.topic}><option value="">Все темы</option>{topics?.map((topic) => <option value={topic.slug} key={topic.id}>{topic.name}</option>)}</select><select name="level" defaultValue={filters.level}><option value="">Все уровни</option><option value="beginner">Начальный</option><option value="intermediate">Средний</option><option value="advanced">Продвинутый</option></select><select name="access" defaultValue={filters.access}><option value="">Любой доступ</option><option value="free">Бесплатный</option><option value="paid">Платный</option><option value="private">Закрытый</option></select><select name="sort" defaultValue={filters.sort}><option value="newest">Сначала новые</option><option value="title">По названию</option></select><button className="button">Применить</button></form><div className="course-grid">{courses?.length ? courses.map((course) => { const cover = getCourseCoverUrl(course.cover_path); return <article className="course-card" key={course.id}>{cover ? <Image src={cover} alt="" width={640} height={360} /> : <div className="cover-placeholder">TokenAI</div>}<div className="stack card-body"><div className="tag-list">{course.course_topics.map((row) => row.topics[0] && <span className="tag" key={row.topics[0].slug}>{row.topics[0].name}</span>)}</div><h2><Link href={`/courses/${course.slug}`}>{course.title}</Link></h2><p className="muted">{course.short_description || "Описание скоро появится."}</p><div className="actions split"><strong>{formatCoursePrice(course.access_type, course.price_amount, course.currency)}</strong><span className="muted">{course.estimated_minutes ? `${course.estimated_minutes} мин` : course.level}</span></div></div></article>; }) : <div className="card center stack"><h2>Курсы не найдены</h2><p className="muted">Измените фильтры или загляните позже.</p></div>}</div></main>;
+  const reviewEntries = await Promise.all((courses ?? []).map(async (course) => {
+    const { data } = await supabase.rpc("get_public_course_reviews", { target_course_id: course.id, result_limit: 1 });
+    const summary = data as { averageRating?: number | null; reviewCount?: number } | null;
+    return [course.id, { average: summary?.averageRating ?? null, count: summary?.reviewCount ?? 0 }] as const;
+  }));
+  const reviews = new Map(reviewEntries);
+  const levelLabels: Record<string, string> = { beginner: "Начальный", intermediate: "Средний", advanced: "Продвинутый" };
+
+  return (
+    <main className="page-shell catalog-page">
+      <header className="catalog-heading"><p className="eyebrow">Каталог TokenAI</p><h1>Курсы для практики<br />с AI‑инструментами</h1><p className="hero-text">Выберите направление и двигайтесь от первого урока к готовому результату.</p></header>
+      <CatalogFilters topics={topics ?? []} filters={filters} />
+      <div className="catalog-results-heading"><p className="muted">{courses?.length ? `Найдено курсов: ${courses.length}` : "По выбранным условиям ничего не найдено"}</p></div>
+      <section className="learning-course-grid" aria-label="Список курсов">
+        {courses?.length ? courses.map((course) => {
+          const cover = getCourseCoverUrl(course.cover_path);
+          const review = reviews.get(course.id);
+          const instructor = course.course_instructors.map((row) => row.profiles[0]?.display_name || (row.profiles[0]?.username ? `@${row.profiles[0].username}` : null)).filter(Boolean).join(", ");
+          return (
+            <article className="learning-course-card" key={course.id}>
+              <Link className="course-card-cover" href={`/courses/${course.slug}`} aria-label={`Открыть курс «${course.title}»`}>
+                {cover ? <Image src={cover} alt="" fill sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw" /> : <div className="cover-placeholder">TokenAI</div>}
+                <span className="course-card-arrow"><ArrowUpRight aria-hidden="true" size={19} /></span>
+              </Link>
+              <div className="course-card-content">
+                <div className="course-card-kicker"><span>{course.course_topics[0]?.topics[0]?.name ?? levelLabels[course.level]}</span><span>{levelLabels[course.level]}</span></div>
+                <h2><Link href={`/courses/${course.slug}`}>{course.title}</Link></h2>
+                {instructor && <p className="course-instructor">{instructor}</p>}
+                <p className="muted course-card-description">{course.short_description || "Описание скоро появится."}</p>
+                <div className="course-card-footer">
+                  <strong>{formatCoursePrice(course.access_type, course.price_amount, course.currency)}</strong>
+                  <div className="course-card-facts">
+                    {review && review.count > 0 && <span><Star aria-hidden="true" size={15} fill="currentColor" />{review.average} ({review.count})</span>}
+                    {course.estimated_minutes && <span><Clock3 aria-hidden="true" size={15} />{course.estimated_minutes} мин</span>}
+                  </div>
+                </div>
+              </div>
+            </article>
+          );
+        }) : (
+          <div className="empty-state"><div className="empty-state-mark" aria-hidden="true">0</div><h2>Курсы не найдены</h2><p className="muted">Сбросьте часть фильтров или попробуйте другой поисковый запрос.</p><Link className="button secondary" href="/courses">Сбросить фильтры</Link></div>
+        )}
+      </section>
+    </main>
+  );
 }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { CheckCircle2, History, RotateCcw } from "lucide-react";
 import { startQuizAttemptAction, submitQuizAttemptAction } from "@/app/learning/quiz-actions";
 import type { QuizAnswer, QuizLessonData } from "@/lib/quiz";
 
@@ -59,22 +60,25 @@ export function QuizLesson({ lessonId, data }: { lessonId: string; data: QuizLes
     return <p className="notice">Тест пока недоступен: администратору нужно проверить вопросы и варианты ответов.</p>;
   }
 
-  return <div className="stack roomy">
-    <header className="actions split">
-      <div><strong>{data.questionCount} вопросов</strong><p className="field-help">Каждый вопрос имеет одинаковый вес.</p></div>
-      <span className="badge">{data.maxAttempts === null ? "Попытки без ограничений" : `Осталось новых попыток: ${data.remainingAttempts}`}</span>
+  return <div className="quiz-shell">
+    <header className="quiz-intro">
+      <div><p className="eyebrow">Проверка знаний</p><h2>{data.questionCount} вопросов</h2><p className="muted">Ответьте на каждый вопрос. Каждый вопрос имеет одинаковый вес.</p></div>
+      <span className="attempt-count">{data.maxAttempts === null ? "Попытки без ограничений" : `Осталось попыток: ${data.remainingAttempts}`}</span>
     </header>
 
-    {latestResult && <p className="notice success">Попытка {latestResult.attemptNumber}: {latestResult.score}/{data.questionCount} — {latestResult.percentage}%.</p>}
+    {latestResult && <div className="quiz-result" role="status"><CheckCircle2 aria-hidden="true" size={28} /><div><p>Попытка {latestResult.attemptNumber} завершена</p><strong>{latestResult.percentage}%</strong><span>{latestResult.score} из {data.questionCount} правильных ответов</span></div></div>}
     {message && <p className={latestResult ? "notice success" : "notice"} aria-live="polite">{message}</p>}
 
-    {activeAttempt ? <form className="stack roomy" action={submitAttempt}>
-      <p className="eyebrow">Попытка {activeAttempt.attemptNumber}</p>
-      {data.questions.map((question, index) => <fieldset className="quiz-question stack compact" key={question.id} disabled={pending}>
-        <legend><strong>{index + 1}. {question.question}</strong></legend>
+    {activeAttempt ? <form className="quiz-form" action={submitAttempt}>
+      <p className="quiz-attempt-label">Попытка {activeAttempt.attemptNumber}</p>
+      {data.questions.map((question, index) => <fieldset className="quiz-question" key={question.id} disabled={pending}>
+        <legend><span>{String(index + 1).padStart(2, "0")}</span><strong>{question.question}</strong></legend>
+        <p className="field-help">{question.questionType === "multiple" ? "Можно выбрать несколько вариантов" : "Выберите один вариант"}</p>
+        <div className="quiz-options">
         {question.options.map((option) => {
           const multiple = question.questionType === "multiple";
-          return <label className="quiz-option" key={option.id}>
+          const selected = (answers[question.id] ?? []).includes(option.id);
+          return <label className={`quiz-option${selected ? " selected" : ""}`} key={option.id}>
             <input
               type={multiple ? "checkbox" : "radio"}
               name={`question-${question.id}`}
@@ -85,12 +89,13 @@ export function QuizLesson({ lessonId, data }: { lessonId: string; data: QuizLes
             <span>{option.text}</span>
           </label>;
         })}
+        </div>
       </fieldset>)}
-      <button className="button" disabled={pending}>{pending ? "Проверяем…" : "Завершить попытку"}</button>
-    </form> : <div className="stack compact">
-      {canStart ? <button className="button" type="button" disabled={pending} onClick={startAttempt}>{pending ? "Начинаем…" : data.attempts.length ? "Повторить тест" : "Начать тест"}</button> : <p className="notice">Доступные попытки закончились.</p>}
+      <button className="button quiz-submit" disabled={pending}>{pending ? "Проверяем…" : "Завершить и проверить"}</button>
+    </form> : <div className="quiz-start">
+      {canStart ? <button className="button" type="button" disabled={pending} onClick={startAttempt}>{data.attempts.length ? <RotateCcw aria-hidden="true" size={18} /> : <CheckCircle2 aria-hidden="true" size={18} />}{pending ? "Начинаем…" : data.attempts.length ? "Пройти ещё раз" : "Начать тест"}</button> : <p className="notice">Доступные попытки закончились.</p>}
     </div>}
 
-    {data.attempts.some((attempt) => attempt.completedAt) && <section className="stack compact"><h3>История попыток</h3>{data.attempts.filter((attempt) => attempt.completedAt).map((attempt) => <div className="order-summary" key={attempt.id}><span>Попытка {attempt.attemptNumber}</span><strong>{attempt.score}/{data.questionCount} · {Number(attempt.percentage)}%</strong></div>)}</section>}
+    {data.attempts.some((attempt) => attempt.completedAt) && <section className="quiz-history"><h3><History aria-hidden="true" size={19} />История попыток</h3>{data.attempts.filter((attempt) => attempt.completedAt).map((attempt) => <div className="quiz-history-row" key={attempt.id}><span>Попытка {attempt.attemptNumber}</span><strong>{attempt.score}/{data.questionCount} · {Number(attempt.percentage)}%</strong></div>)}</section>}
   </div>;
 }

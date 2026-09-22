@@ -44,6 +44,7 @@ export function YouTubeLearningPlayer({ lessonId, videoId, savedPosition }: { le
   const watchedRef = useRef(0);
   const savingRef = useRef(false);
   const [message, setMessage] = useState("Позиция сохраняется автоматически.");
+  const [progress, setProgress] = useState<number | null>(null);
   const elementId = `youtube-player-${lessonId}`;
 
   const accrueWatchTime = useCallback(() => {
@@ -69,7 +70,9 @@ export function YouTubeLearningPlayer({ lessonId, videoId, savedPosition }: { le
       });
       const result = await response.json();
       if (!response.ok) throw new Error("SAVE_FAILED");
-      setMessage(result.status === "completed" ? "Видео просмотрено — урок завершён." : `Прогресс сохранён: ${Math.round(Number(result.progressPercent))}%`);
+      const savedProgress = Math.round(Number(result.progressPercent));
+      setProgress(savedProgress);
+      setMessage(result.status === "completed" ? "Видео просмотрено — урок завершён." : `Прогресс сохранён: ${savedProgress}%`);
       if (result.status === "completed") router.refresh();
     } catch {
       watchedRef.current += watchedDelta;
@@ -110,5 +113,5 @@ export function YouTubeLearningPlayer({ lessonId, videoId, savedPosition }: { le
     };
   }, [accrueWatchTime, elementId, persist, savedPosition, videoId]);
 
-  return <div className="stack compact"><div className="video-frame"><div id={elementId} /></div><p className="field-help" aria-live="polite">{message}</p></div>;
+  return <div className="video-lesson-player"><div className="video-frame"><div id={elementId} /></div><div className="video-progress-status"><p className="field-help" aria-live="polite">{message}</p>{progress !== null && <div className="continue-progress" aria-label={`Прогресс видео ${progress}%`}><div className="progress-track"><span style={{ width: `${progress}%` }} /></div><span>{progress}%</span></div>}</div></div>;
 }

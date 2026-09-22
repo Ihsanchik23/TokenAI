@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, Clock3, ExternalLink, FileText, Link2, MessageSquareText, Paperclip, RotateCcw, Send } from "lucide-react";
 import { submitAssignmentAction } from "@/app/learning/assignment-actions";
 import {
   assignmentFileTypes,
@@ -14,6 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 const statusLabels = { submitted: "На проверке", approved: "Принято", needs_revision: "Нужна доработка" };
+const statusIcons = { submitted: Clock3, approved: CheckCircle2, needs_revision: RotateCcw };
 
 function safeFileName(name: string) {
   const cleaned = name.normalize("NFKC").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
@@ -107,17 +109,18 @@ export function AssignmentLesson({ userId, data }: { userId: string; data: Assig
     });
   }
 
-  return <div className="stack roomy">
-    <section className="stack compact"><h3>Инструкция</h3><div className="lesson-content">{data.instructions}</div><p className="field-help">Можно отправить: {[data.allowText && "текст", data.allowLink && "ссылку", data.allowFile && "файлы"].filter(Boolean).join(", ")}.</p></section>
+  return <div className="assignment-shell">
+    <section className="assignment-instructions"><p className="eyebrow">Практическое задание</p><h2>Инструкция</h2><div className="lesson-content">{data.instructions}</div><div className="submission-types" aria-label="Доступные форматы ответа">{data.allowText && <span><FileText aria-hidden="true" size={16} />Текст</span>}{data.allowLink && <span><Link2 aria-hidden="true" size={16} />Ссылка</span>}{data.allowFile && <span><Paperclip aria-hidden="true" size={16} />Файлы</span>}</div></section>
 
-    {canSubmit ? <form ref={formRef} className="stack" action={(formData) => void submit(formData)}>
-      {data.allowText && <label className="field"><span>Ответ</span><textarea name="text" rows={7} maxLength={10000} /></label>}
+    {canSubmit ? <form ref={formRef} className="assignment-form" action={(formData) => void submit(formData)}>
+      <div><p className="eyebrow">Ваш ответ</p><h2>{latest ? "Новая попытка" : "Отправить работу"}</h2></div>
+      {data.allowText && <label className="field"><span>Текст ответа</span><textarea name="text" rows={7} maxLength={10000} placeholder="Опишите результат или ход работы" /></label>}
       {data.allowLink && <label className="field"><span>Ссылка</span><input name="link" type="url" maxLength={2000} placeholder="https://…" /></label>}
-      {data.allowFile && <label className="field"><span>Файлы</span><input name="files" type="file" multiple accept={assignmentFileTypes.join(",")} /><small className="field-help">До 5 файлов, каждый до 10 МБ: PDF, TXT, DOC/DOCX, изображения или ZIP.</small></label>}
+      {data.allowFile && <label className="field file-field"><span><Paperclip aria-hidden="true" size={17} />Файлы</span><input name="files" type="file" multiple accept={assignmentFileTypes.join(",")} /><small className="field-help">До 5 файлов, каждый до 10 МБ: PDF, TXT, DOC/DOCX, изображения или ZIP.</small></label>}
       {message && <p className={message.includes("отправлена") ? "notice success" : "notice"} aria-live="polite">{message}</p>}
-      <button className="button" disabled={pending || uploading}>{uploading ? "Загружаем файлы…" : pending ? "Отправляем…" : latest ? "Отправить новую попытку" : "Отправить работу"}</button>
-    </form> : <p className={latest?.status === "approved" ? "notice success" : "notice"}>{latest?.status === "approved" ? "Работа принята преподавателем." : "Работа отправлена и ожидает проверки."}</p>}
+      <button className="button" disabled={pending || uploading}><Send aria-hidden="true" size={18} />{uploading ? "Загружаем файлы…" : pending ? "Отправляем…" : latest ? "Отправить новую попытку" : "Отправить работу"}</button>
+    </form> : <div className={`assignment-current-state ${latest?.status ?? "submitted"}`}>{latest?.status === "approved" ? <CheckCircle2 aria-hidden="true" size={24} /> : <Clock3 aria-hidden="true" size={24} />}<div><strong>{latest?.status === "approved" ? "Работа принята" : "Работа на проверке"}</strong><p>{latest?.status === "approved" ? "Преподаватель одобрил эту попытку." : "Новая отправка станет доступна, если преподаватель вернёт работу на доработку."}</p></div></div>}
 
-    {data.submissions.length > 0 && <section className="stack"><h3>История отправок</h3>{data.submissions.map((submission) => <article className="quiz-question stack compact" key={submission.id}><div className="actions split"><strong>Попытка {submission.attemptNumber}</strong><span className={`badge ${submission.status}`}>{statusLabels[submission.status]}</span></div><p className="field-help">{new Date(submission.submittedAt).toLocaleString("ru-RU")}</p>{submission.textAnswer && <p>{submission.textAnswer}</p>}{submission.linkUrl && <a href={submission.linkUrl} target="_blank" rel="noreferrer">Открыть ссылку ↗</a>}{submission.files.map((file) => <a href={file.signedUrl ?? "#"} target="_blank" rel="noreferrer" key={file.id}>{file.name} · {formatBytes(file.size)}</a>)}{submission.teacherComment && <p className="notice"><strong>Комментарий преподавателя:</strong> {submission.teacherComment}</p>}{submission.status === "approved" && <Link href={`/profile/showcase/new?submission=${submission.id}`}>Добавить в Showcase</Link>}</article>)}</section>}
+    {data.submissions.length > 0 && <section className="assignment-history"><div><p className="eyebrow">Отправки</p><h2>История попыток</h2></div>{data.submissions.map((submission) => { const StatusIcon = statusIcons[submission.status]; return <article className="submission-item" key={submission.id}><header><div><strong>Попытка {submission.attemptNumber}</strong><time>{new Date(submission.submittedAt).toLocaleString("ru-RU")}</time></div><span className={`status-pill ${submission.status}`}><StatusIcon aria-hidden="true" size={15} />{statusLabels[submission.status]}</span></header>{submission.textAnswer && <p className="submission-answer">{submission.textAnswer}</p>}<div className="submission-links">{submission.linkUrl && <a href={submission.linkUrl} target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" size={16} />Открыть ссылку</a>}{submission.files.map((file) => <a href={file.signedUrl ?? "#"} target="_blank" rel="noreferrer" key={file.id}><Paperclip aria-hidden="true" size={16} />{file.name} · {formatBytes(file.size)}</a>)}</div>{submission.teacherComment && <div className="teacher-comment"><MessageSquareText aria-hidden="true" size={19} /><p><strong>Комментарий преподавателя</strong><span>{submission.teacherComment}</span></p></div>}{submission.status === "approved" && <Link className="showcase-action" href={`/profile/showcase/new?submission=${submission.id}`}>Добавить в Showcase</Link>}</article>; })}</section>}
   </div>;
 }
