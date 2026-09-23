@@ -11,13 +11,31 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   const { data: topics } = await supabase.from("topics").select("id,name,slug").order("name");
   let ids: string[] | null = null;
   if (filters.topic) { const topic = topics?.find((item) => item.slug === filters.topic); if (topic) { const { data } = await supabase.from("course_topics").select("course_id").eq("topic_id", topic.id); ids = (data ?? []).map((row) => row.course_id); } }
-  let query = supabase.from("courses").select("id,slug,title,short_description,cover_path,access_type,price_amount,currency,level,estimated_minutes,created_at,course_topics(topics(name,slug)),course_instructors(profiles(display_name,username))").eq("status", "published");
+  let query = supabase.from("courses").select("id,slug,title,short_description,cover_path,access_type,price_amount,currency,level,estimated_minutes,created_at,course_topics(topics(name,slug))").eq("status", "published");
   if (filters.q?.trim()) query = query.ilike("title", `%${filters.q.trim()}%`);
   if (["beginner", "intermediate", "advanced"].includes(filters.level ?? "")) query = query.eq("level", filters.level!);
   if (["free", "paid", "private"].includes(filters.access ?? "")) query = query.eq("access_type", filters.access!);
   if (ids) query = ids.length ? query.in("id", ids) : query.eq("id", "00000000-0000-0000-0000-000000000000");
   query = filters.sort === "title" ? query.order("title") : query.order("created_at", { ascending: false });
-  const { data: courses } = await query;
+  const { data: courses, error: coursesError } = await query;
+  const courseIds = (courses ?? []).map((course) => course.id);
+  const { data: instructorRows } = courseIds.length
+    ? await supabase.from("course_instructors").select("course_id,user_id").in("course_id", courseIds)
+    : { data: [] };
+  const instructorIds = [...new Set((instructorRows ?? []).map((row) => row.user_id))];
+  const { data: instructorProfiles } = instructorIds.length
+    ? await supabase.from("profiles").select("id,display_name,username").in("id", instructorIds)
+    : { data: [] };
+  const profilesById = new Map((instructorProfiles ?? []).map((profile) => [profile.id, profile]));
+  const instructorsByCourse = new Map<string, string[]>();
+  for (const row of instructorRows ?? []) {
+    const profile = profilesById.get(row.user_id);
+    if (!profile) continue;
+    const name = profile.display_name || (profile.username ? `@${profile.username}` : null);
+    if (!name) continue;
+    instructorsByCourse.set(row.course_id, [...(instructorsByCourse.get(row.course_id) ?? []), name]);
+  }
+  const catalogError = coursesError;
   const reviewEntries = await Promise.all((courses ?? []).map(async (course) => {
     const { data } = await supabase.rpc("get_public_course_reviews", { target_course_id: course.id, result_limit: 1 });
     const summary = data as { averageRating?: number | null; reviewCount?: number } | null;
@@ -28,14 +46,14 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
 
   return (
     <main className="page-shell catalog-page">
-      <header className="catalog-heading"><p className="eyebrow">Каталог TokenAI</p><h1>Курсы для практики<br />с AI‑инструментами</h1><p className="hero-text">Выберите направление и двигайтесь от первого урока к готовому результату.</p></header>
+      <header className="catalog-heading"><p className="eyebrow">Каталог TokenAI</p><h1>Курсы</h1></header>
       <CatalogFilters topics={topics ?? []} filters={filters} />
-      <div className="catalog-results-heading"><p className="muted">{courses?.length ? `Найдено курсов: ${courses.length}` : "По выбранным условиям ничего не найдено"}</p></div>
+      <div className="catalog-results-heading"><p className="muted">{catalogError ? "Не удалось загрузить каталог" : courses?.length ? `Найдено курсов: ${courses.length}` : "По выбранным условиям ничего не найдено"}</p></div>
       <section className="learning-course-grid" aria-label="Список курсов">
-        {courses?.length ? courses.map((course) => {
+        {!catalogError && courses?.length ? courses.map((course) => {
           const cover = getCourseCoverUrl(course.cover_path);
           const review = reviews.get(course.id);
-          const instructor = course.course_instructors.map((row) => row.profiles[0]?.display_name || (row.profiles[0]?.username ? `@${row.profiles[0].username}` : null)).filter(Boolean).join(", ");
+          const instructor = instructorsByCourse.get(course.id)?.join(", ");
           return (
             <article className="learning-course-card" key={course.id}>
               <Link className="course-card-cover" href={`/courses/${course.slug}`} aria-label={`Открыть курс «${course.title}»`}>
@@ -57,7 +75,9 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
               </div>
             </article>
           );
-        }) : (
+        }) : catalogError ? (
+          <div className="empty-state"><div className="empty-state-mark" aria-hidden="true">!</div><h2>Каталог временно недоступен</h2><p className="muted">Не удалось получить курсы. Попробуйте обновить страницу.</p></div>
+        ) : (
           <div className="empty-state"><div className="empty-state-mark" aria-hidden="true">0</div><h2>Курсы не найдены</h2><p className="muted">Сбросьте часть фильтров или попробуйте другой поисковый запрос.</p><Link className="button secondary" href="/courses">Сбросить фильтры</Link></div>
         )}
       </section>
