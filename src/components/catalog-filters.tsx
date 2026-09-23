@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Check, Search, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 
 type Filters = {
   q?: string;
@@ -15,14 +16,14 @@ type Filters = {
 type Topic = { id: string; name: string; slug: string };
 type FilterOption = { label: string; value: string };
 
-function FilterGroup({ legend, name, options, value }: { legend: string; name: string; options: FilterOption[]; value: string }) {
+function FilterGroup({ legend, name, options, value, onChange }: { legend: string; name: string; options: FilterOption[]; value: string; onChange: (value: string) => void }) {
   return (
     <fieldset className="catalog-filter-group">
       <legend>{legend}</legend>
       <div className="catalog-filter-options">
         {options.map((option) => (
           <label className="catalog-filter-option" key={option.value || "all"}>
-            <input type="radio" name={name} value={option.value} defaultChecked={value === option.value} />
+            <input type="radio" name={name} value={option.value} checked={value === option.value} onChange={() => onChange(option.value)} />
             <span><Check aria-hidden="true" size={14} />{option.label}</span>
           </label>
         ))}
@@ -32,11 +33,32 @@ function FilterGroup({ legend, name, options, value }: { legend: string; name: s
 }
 
 export function CatalogFilters({ topics, filters }: { topics: Topic[]; filters: Filters }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState({
+    q: filters.q ?? "",
+    topic: filters.topic ?? "",
+    level: filters.level ?? "",
+    access: filters.access ?? "",
+    sort: filters.sort ?? "newest",
+  });
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const activeFilterCount = [filters.q, filters.topic, filters.level, filters.access, filters.sort && filters.sort !== "newest"].filter(Boolean).length;
   const formKey = [filters.q, filters.topic, filters.level, filters.access, filters.sort].join("|");
+
+  function applyFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (draft.q.trim()) params.set("q", draft.q.trim());
+    if (draft.topic) params.set("topic", draft.topic);
+    if (draft.level) params.set("level", draft.level);
+    if (draft.access) params.set("access", draft.access);
+    if (draft.sort !== "newest") params.set("sort", draft.sort);
+    setOpen(false);
+    const query = params.toString();
+    router.push(query ? `/courses?${query}` : "/courses");
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -95,35 +117,39 @@ export function CatalogFilters({ topics, filters }: { topics: Topic[]; filters: 
               <button className="utility-button" type="button" onClick={() => setOpen(false)} aria-label="Закрыть фильтры"><X aria-hidden="true" size={20} /></button>
             </header>
 
-            <form key={formKey} className="catalog-filter-form" action="/courses" method="get" onSubmit={() => setOpen(false)}>
+            <form key={formKey} className="catalog-filter-form" onSubmit={applyFilters}>
               <label className="catalog-filter-search">
                 <span>Поиск</span>
-                <span className="catalog-filter-search-control"><Search aria-hidden="true" size={18} /><input name="q" placeholder="Название курса" defaultValue={filters.q ?? ""} /></span>
+                <span className="catalog-filter-search-control"><Search aria-hidden="true" size={18} /><input name="q" placeholder="Название курса" value={draft.q} onChange={(event) => setDraft((current) => ({ ...current, q: event.target.value }))} /></span>
               </label>
 
               <div className="catalog-filter-grid">
                 <FilterGroup
                   legend="Тема"
                   name="topic"
-                  value={filters.topic ?? ""}
+                  value={draft.topic}
+                  onChange={(topic) => setDraft((current) => ({ ...current, topic }))}
                   options={[{ label: "Все темы", value: "" }, ...topics.map((topic) => ({ label: topic.name, value: topic.slug }))]}
                 />
                 <FilterGroup
                   legend="Уровень"
                   name="level"
-                  value={filters.level ?? ""}
+                  value={draft.level}
+                  onChange={(level) => setDraft((current) => ({ ...current, level }))}
                   options={[{ label: "Все уровни", value: "" }, { label: "Начальный", value: "beginner" }, { label: "Средний", value: "intermediate" }, { label: "Продвинутый", value: "advanced" }]}
                 />
                 <FilterGroup
                   legend="Доступ"
                   name="access"
-                  value={filters.access ?? ""}
+                  value={draft.access}
+                  onChange={(access) => setDraft((current) => ({ ...current, access }))}
                   options={[{ label: "Любой", value: "" }, { label: "Бесплатный", value: "free" }, { label: "Платный", value: "paid" }, { label: "Закрытый", value: "private" }]}
                 />
                 <FilterGroup
                   legend="Сортировка"
                   name="sort"
-                  value={filters.sort ?? "newest"}
+                  value={draft.sort}
+                  onChange={(sort) => setDraft((current) => ({ ...current, sort }))}
                   options={[{ label: "Сначала новые", value: "newest" }, { label: "По названию", value: "title" }]}
                 />
               </div>

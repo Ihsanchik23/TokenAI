@@ -67,7 +67,7 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
   return (
     <main className="page-shell my-courses-page">
       <header className="my-courses-heading"><p className="eyebrow">Обучение</p><h1>Мои курсы</h1><p className="hero-text">Продолжайте текущий курс или вернитесь к завершённым программам.</p></header>
-      {query.payment === "success" && <p className="notice success">Mock-оплата подтверждена. Курс добавлен.</p>}
+      {query.payment === "success" && <p className="notice success">Покупка подтверждена. Курс добавлен в «Мои курсы» — нажмите «Начать курс», когда будете готовы.</p>}
       {query.course === "unavailable" && <p className="notice">Доступ к курсу недоступен или истёк.</p>}
       {primary ? (() => {
         const course = courseById.get(primary.course_id);

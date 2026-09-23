@@ -1,12 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Clock3, Star } from "lucide-react";
+import { Clock3, Star } from "lucide-react";
+import { CatalogCourseAction } from "@/components/catalog-course-action";
 import { CatalogFilters } from "@/components/catalog-filters";
+import { getOptionalUser } from "@/lib/auth";
 import { formatCoursePrice, getCourseCoverUrl } from "@/lib/course-utils";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CoursesPage({ searchParams }: { searchParams: Promise<{ q?: string; level?: string; access?: string; topic?: string; sort?: string }> }) {
-  const filters = await searchParams;
+  const [filters, user] = await Promise.all([searchParams, getOptionalUser()]);
   const supabase = await createClient();
   const { data: topics } = await supabase.from("topics").select("id,name,slug").order("name");
   let ids: string[] | null = null;
@@ -19,22 +21,10 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   query = filters.sort === "title" ? query.order("title") : query.order("created_at", { ascending: false });
   const { data: courses, error: coursesError } = await query;
   const courseIds = (courses ?? []).map((course) => course.id);
-  const { data: instructorRows } = courseIds.length
-    ? await supabase.from("course_instructors").select("course_id,user_id").in("course_id", courseIds)
+  const { data: enrollmentRows } = user && courseIds.length
+    ? await supabase.from("enrollments").select("course_id,status,expires_at").eq("user_id", user.id).in("course_id", courseIds).in("status", ["active", "completed"])
     : { data: [] };
-  const instructorIds = [...new Set((instructorRows ?? []).map((row) => row.user_id))];
-  const { data: instructorProfiles } = instructorIds.length
-    ? await supabase.from("profiles").select("id,display_name,username").in("id", instructorIds)
-    : { data: [] };
-  const profilesById = new Map((instructorProfiles ?? []).map((profile) => [profile.id, profile]));
-  const instructorsByCourse = new Map<string, string[]>();
-  for (const row of instructorRows ?? []) {
-    const profile = profilesById.get(row.user_id);
-    if (!profile) continue;
-    const name = profile.display_name || (profile.username ? `@${profile.username}` : null);
-    if (!name) continue;
-    instructorsByCourse.set(row.course_id, [...(instructorsByCourse.get(row.course_id) ?? []), name]);
-  }
+  const enrolledCourseIds = new Set((enrollmentRows ?? []).filter((row) => !row.expires_at || new Date(row.expires_at) > new Date()).map((row) => row.course_id));
   const catalogError = coursesError;
   const reviewEntries = await Promise.all((courses ?? []).map(async (course) => {
     const { data } = await supabase.rpc("get_public_course_reviews", { target_course_id: course.id, result_limit: 1 });
@@ -47,29 +37,30 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   return (
     <main className="page-shell catalog-page">
       <header className="catalog-heading"><p className="eyebrow">Каталог TokenAI</p><h1>Курсы</h1></header>
-      <CatalogFilters topics={topics ?? []} filters={filters} />
+      <CatalogFilters key={[filters.q, filters.topic, filters.level, filters.access, filters.sort].join("|")} topics={topics ?? []} filters={filters} />
       <div className="catalog-results-heading"><p className="muted">{catalogError ? "Не удалось загрузить каталог" : courses?.length ? `Найдено курсов: ${courses.length}` : "По выбранным условиям ничего не найдено"}</p></div>
       <section className="learning-course-grid" aria-label="Список курсов">
         {!catalogError && courses?.length ? courses.map((course) => {
           const cover = getCourseCoverUrl(course.cover_path);
           const review = reviews.get(course.id);
-          const instructor = instructorsByCourse.get(course.id)?.join(", ");
+          const topicName = course.course_topics[0]?.topics[0]?.name;
           return (
             <article className="learning-course-card" key={course.id}>
               <Link className="course-card-cover" href={`/courses/${course.slug}`} aria-label={`Открыть курс «${course.title}»`}>
-                {cover ? <Image src={cover} alt="" fill sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw" /> : <div className="cover-placeholder">TokenAI</div>}
-                <span className="course-card-arrow"><ArrowUpRight aria-hidden="true" size={19} /></span>
+                {cover ? <Image src={cover} alt="" fill sizes="(max-width: 700px) 100vw, 50vw" /> : <div className="cover-placeholder">TokenAI</div>}
               </Link>
               <div className="course-card-content">
-                <div className="course-card-kicker"><span>{course.course_topics[0]?.topics[0]?.name ?? levelLabels[course.level]}</span><span>{levelLabels[course.level]}</span></div>
+                <div className="course-card-kicker">{topicName && <span>{topicName}</span>}<span>{levelLabels[course.level]}</span></div>
                 <h2><Link href={`/courses/${course.slug}`}>{course.title}</Link></h2>
-                {instructor && <p className="course-instructor">{instructor}</p>}
                 <p className="muted course-card-description">{course.short_description || "Описание скоро появится."}</p>
                 <div className="course-card-footer">
                   <strong>{formatCoursePrice(course.access_type, course.price_amount, course.currency)}</strong>
-                  <div className="course-card-facts">
-                    {review && review.count > 0 && <span><Star aria-hidden="true" size={15} fill="currentColor" />{review.average} ({review.count})</span>}
-                    {course.estimated_minutes && <span><Clock3 aria-hidden="true" size={15} />{course.estimated_minutes} мин</span>}
+                  <div className="course-card-footer-side">
+                    <div className="course-card-facts">
+                      {review && review.count > 0 && <span><Star aria-hidden="true" size={15} fill="currentColor" />{review.average} ({review.count})</span>}
+                      {course.estimated_minutes && <span><Clock3 aria-hidden="true" size={15} />{course.estimated_minutes} мин</span>}
+                    </div>
+                    <CatalogCourseAction courseId={course.id} slug={course.slug} accessType={course.access_type} authenticated={Boolean(user)} enrolled={enrolledCourseIds.has(course.id)} />
                   </div>
                 </div>
               </div>
