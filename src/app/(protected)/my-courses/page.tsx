@@ -11,7 +11,7 @@ import { getLearningState } from "@/lib/learning";
 import { ensureMyProfile, getMyProfile, isProfileComplete } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function MyCoursesPage({ searchParams }: { searchParams: Promise<{ payment?: string; course?: string }> }) {
+export default async function MyCoursesPage({ searchParams }: { searchParams: Promise<{ payment?: string; course?: string; status?: string }> }) {
   const [user, query] = await Promise.all([requireUser(), searchParams]);
   const supabase = await createClient();
   await ensureMyProfile(supabase);
@@ -37,7 +37,8 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
   }] as const)));
   const activeEnrollments = enrollments.filter((enrollment) => enrollment.status !== "completed" && !learningByEnrollment.get(enrollment.id)?.learningComplete);
   const completedEnrollments = enrollments.filter((enrollment) => enrollment.status === "completed" || learningByEnrollment.get(enrollment.id)?.learningComplete);
-  const primary = activeEnrollments.find((enrollment) => enrollment.started_at) ?? activeEnrollments[0] ?? null;
+  const selectedStatus = query.status === "completed" ? "completed" : "active";
+  const visibleEnrollments = selectedStatus === "completed" ? completedEnrollments : activeEnrollments;
 
   function compactCourse(enrollment: typeof enrollments[number]) {
     const course = courseById.get(enrollment.course_id);
@@ -66,18 +67,19 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
 
   return (
     <main className="page-shell my-courses-page">
-      <header className="my-courses-heading"><p className="eyebrow">Обучение</p><h1>Мои курсы</h1><p className="hero-text">Продолжайте текущий курс или вернитесь к завершённым программам.</p></header>
+      <header className="my-courses-heading"><p className="eyebrow">Обучение</p><h1>Мои курсы</h1></header>
       {query.payment === "success" && <p className="notice success">Покупка подтверждена. Курс добавлен в «Мои курсы» — нажмите «Начать курс», когда будете готовы.</p>}
       {query.course === "unavailable" && <p className="notice">Доступ к курсу недоступен или истёк.</p>}
-      {primary ? (() => {
-        const course = courseById.get(primary.course_id);
-        const state = learningByEnrollment.get(primary.id);
-        if (!course) return null;
-        const cover = getCourseCoverUrl(course.cover_path);
-        return <section className="primary-learning" aria-labelledby="primary-learning-heading"><div className="primary-learning-media">{cover ? <Image src={cover} alt={`Обложка курса «${course.title}»`} fill sizes="(max-width: 800px) 100vw, 48vw" priority /> : <div className="cover-placeholder">TokenAI</div>}</div><div className="primary-learning-copy"><p className="eyebrow">Продолжить обучение</p><h2 id="primary-learning-heading">{course.title}</h2>{state?.continueLesson && <div className="current-lesson"><span>{state.continueLesson.modulePosition}.{state.continueLesson.position}</span><div><small>Текущий урок</small><strong>{state.continueLesson.title}</strong></div></div>}<div className="primary-progress"><div className="split"><span>Прогресс курса</span><strong>{state?.progressPercent ?? 0}%</strong></div><div className="progress-track"><span style={{ width: `${state?.progressPercent ?? 0}%` }} /></div><small>{state?.completedRequired ?? 0} из {state?.requiredTotal ?? 0} обязательных уроков</small></div>{state?.completion?.missingAssignments ? <p className="notice">На проверке заданий: {state.completion.missingAssignments}</p> : null}{primary.started_at ? <Link className="button" href={`/learn/${course.slug}`}>Продолжить<ArrowRight aria-hidden="true" size={18} /></Link> : <form action={startCourseAction.bind(null, course.id)}><button className="button">Начать курс<ArrowRight aria-hidden="true" size={18} /></button></form>}</div></section>;
-      })() : null}
-
-      {enrollments.length ? <div className="my-course-sections"><nav className="learning-tabs" aria-label="Разделы моих курсов"><a href="#active">Активные <span>{activeEnrollments.length}</span></a><a href="#completed">Завершённые <span>{completedEnrollments.length}</span></a></nav><section id="active" className="my-course-section"><div className="section-heading-inline"><h2>Активные</h2><span>{activeEnrollments.length}</span></div><div className="my-course-list">{activeEnrollments.filter((item) => item.id !== primary?.id).length ? activeEnrollments.filter((item) => item.id !== primary?.id).map(compactCourse) : <p className="empty-section-copy">{primary ? "Основной активный курс показан выше." : "Активных курсов сейчас нет."}</p>}</div></section><section id="completed" className="my-course-section"><div className="section-heading-inline"><h2>Завершённые</h2><span>{completedEnrollments.length}</span></div><div className="my-course-list">{completedEnrollments.length ? completedEnrollments.map(compactCourse) : <p className="empty-section-copy">Завершённые курсы появятся здесь.</p>}</div>{completedEnrollments.map((enrollment) => { const certificate = certificateByEnrollment.get(enrollment.id); const course = courseById.get(enrollment.course_id); return certificate && course && !certificate.downloadUrl ? <CertificateCard certificate={{ ...certificate, courseTitle: course.title }} key={certificate.id} /> : null; })}</section></div> : <section className="empty-state my-courses-empty"><div className="empty-state-mark" aria-hidden="true">0</div><h2>У вас пока нет курсов</h2><p className="muted">Выберите программу в каталоге — она появится здесь после зачисления.</p><Link className="button" href="/courses">Открыть каталог</Link></section>}
+      <div className="my-course-sections">
+        <nav className="learning-tabs" aria-label="Разделы моих курсов">
+          <Link className={selectedStatus === "active" ? "active" : undefined} href="/my-courses" aria-current={selectedStatus === "active" ? "page" : undefined}>Активные <span>{activeEnrollments.length}</span></Link>
+          <Link className={selectedStatus === "completed" ? "active" : undefined} href="/my-courses?status=completed" aria-current={selectedStatus === "completed" ? "page" : undefined}>Завершённые <span>{completedEnrollments.length}</span></Link>
+        </nav>
+        <section className="my-course-section" aria-label={selectedStatus === "completed" ? "Завершённые курсы" : "Активные курсы"}>
+          <div className="my-course-list">{visibleEnrollments.length ? visibleEnrollments.map(compactCourse) : <div className="my-courses-minimal-empty"><p>{selectedStatus === "completed" ? "Завершённых курсов пока нет." : "Активных курсов пока нет."}</p>{!enrollments.length && <Link className="button secondary" href="/courses">Открыть каталог</Link>}</div>}</div>
+          {selectedStatus === "completed" && completedEnrollments.map((enrollment) => { const certificate = certificateByEnrollment.get(enrollment.id); const course = courseById.get(enrollment.course_id); return certificate && course && !certificate.downloadUrl ? <CertificateCard certificate={{ ...certificate, courseTitle: course.title }} key={certificate.id} /> : null; })}
+        </section>
+      </div>
     </main>
   );
 }
