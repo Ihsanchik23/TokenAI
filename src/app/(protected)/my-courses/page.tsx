@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Award, BookOpen, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Award } from "lucide-react";
 import { startCourseAction } from "@/app/enrollment/actions";
 import { CertificateCard } from "@/components/certificate-card";
 import { MyCoursesControls } from "@/components/my-courses-controls";
@@ -64,8 +64,7 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
             <div><span>Пройдено</span><strong>{progress}%</strong></div>
             <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
           </div>
-          <div className="course-card-footer my-course-card-footer">
-            <strong className="my-course-card-status">{completed ? <><CheckCircle2 aria-hidden="true" size={14} />Завершён</> : <><BookOpen aria-hidden="true" size={14} />Активный</>}</strong>
+          <div className="course-card-footer my-course-card-footer action-only">
             <div className="my-course-card-actions">
               {enrollment.started_at ? <Link className="catalog-card-action" href={`/learn/${course.slug}`}>{completed ? "Итоги" : "Продолжить"}<ArrowRight aria-hidden="true" size={15} /></Link> : <form action={startCourseAction.bind(null, course.id)}><button className="catalog-card-action" type="submit">Начать<ArrowRight aria-hidden="true" size={15} /></button></form>}
               {certificate?.downloadUrl && <a className="certificate-link" href={certificate.downloadUrl} target="_blank" rel="noreferrer"><Award aria-hidden="true" size={15} />Сертификат</a>}

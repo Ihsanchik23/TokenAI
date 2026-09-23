@@ -32,7 +32,7 @@ export function ProfileForm({
       <input type="hidden" name="intent" value={mode} />
 
       <div className="field">
-        <label htmlFor={`${mode}-display-name`}>Отображаемое имя</label>
+        <label htmlFor={`${mode}-display-name`}>{mode === "edit" ? "Имя и фамилия" : "Отображаемое имя"}</label>
         <input
           id={`${mode}-display-name`}
           name="displayName"
@@ -45,43 +45,30 @@ export function ProfileForm({
         )}
       </div>
 
-      <div className="field">
-        <label htmlFor={`${mode}-username`}>Username</label>
-        <div className="input-prefix">
-          <span>@</span>
-          <input
-            id={`${mode}-username`}
-            name="username"
-            defaultValue={
-              profile.username.startsWith("user_") ? "" : profile.username
-            }
-            minLength={3}
-            maxLength={48}
-            pattern="[a-z0-9_]+"
-            autoCapitalize="none"
-            autoCorrect="off"
-            required
-          />
-        </div>
-        <p className="field-help">Только a–z, цифры и _. Регистр будет приведён к нижнему.</p>
-        {state.fieldErrors?.username && (
-          <p className="field-error">{state.fieldErrors.username}</p>
-        )}
-      </div>
-
-      <div className="field">
-        <label htmlFor={`${mode}-bio`}>О себе</label>
-        <textarea
-          id={`${mode}-bio`}
-          name="bio"
-          defaultValue={profile.bio ?? ""}
-          maxLength={500}
-          rows={5}
-        />
-        {state.fieldErrors?.bio && (
-          <p className="field-error">{state.fieldErrors.bio}</p>
-        )}
-      </div>
+      {mode === "edit" ? (
+        <>
+          <input type="hidden" name="username" value={profile.username} />
+          <input type="hidden" name="bio" value={profile.bio ?? ""} />
+          {profile.is_public && <input type="hidden" name="isPublic" value="on" />}
+        </>
+      ) : (
+        <>
+          <div className="field">
+            <label htmlFor={`${mode}-username`}>Username</label>
+            <div className="input-prefix">
+              <span>@</span>
+              <input id={`${mode}-username`} name="username" defaultValue={profile.username.startsWith("user_") ? "" : profile.username} minLength={3} maxLength={48} pattern="[a-z0-9_]+" autoCapitalize="none" autoCorrect="off" required />
+            </div>
+            <p className="field-help">Только a–z, цифры и _. Регистр будет приведён к нижнему.</p>
+            {state.fieldErrors?.username && <p className="field-error">{state.fieldErrors.username}</p>}
+          </div>
+          <div className="field">
+            <label htmlFor={`${mode}-bio`}>О себе</label>
+            <textarea id={`${mode}-bio`} name="bio" defaultValue={profile.bio ?? ""} maxLength={500} rows={5} />
+            {state.fieldErrors?.bio && <p className="field-error">{state.fieldErrors.bio}</p>}
+          </div>
+        </>
+      )}
 
       <fieldset className="field">
         <legend>Интересы</legend>
@@ -100,17 +87,7 @@ export function ProfileForm({
         </div>
       </fieldset>
 
-      <label className="toggle-row">
-        <input
-          type="checkbox"
-          name="isPublic"
-          defaultChecked={profile.is_public}
-        />
-        <span>
-          <strong>Публичный профиль</strong>
-          <small>Профиль будет доступен по адресу /students/username.</small>
-        </span>
-      </label>
+      {mode === "onboarding" && <label className="toggle-row"><input type="checkbox" name="isPublic" defaultChecked={profile.is_public} /><span><strong>Показывать в сообществе</strong></span></label>}
 
       {state.message && (
         <p

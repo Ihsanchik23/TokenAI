@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Camera } from "lucide-react";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateAvatarPath } from "@/app/profile/actions";
@@ -19,12 +20,14 @@ type AvatarUploadProps = {
   userId: string;
   currentPath: string | null;
   displayName: string | null;
+  iconOnly?: boolean;
 };
 
 export function AvatarUpload({
   userId,
   currentPath,
   displayName,
+  iconOnly = false,
 }: AvatarUploadProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -79,7 +82,7 @@ export function AvatarUpload({
   }
 
   return (
-    <div className="avatar-editor">
+    <div className={`avatar-editor${iconOnly ? " icon-only" : ""}`}>
       <div className="avatar avatar-large">
         {avatarUrl ? (
           <Image
@@ -106,14 +109,15 @@ export function AvatarUpload({
           }}
         />
         <button
-          className="button secondary"
+          className={iconOnly ? "avatar-edit-icon" : "button secondary"}
           type="button"
           disabled={pending}
           onClick={() => inputRef.current?.click()}
+          aria-label={pending ? "Загружаем аватар" : avatarUrl ? "Заменить аватар" : "Добавить аватар"}
         >
-          {pending ? "Загружаем…" : avatarUrl ? "Заменить аватар" : "Добавить аватар"}
+          {iconOnly ? <Camera aria-hidden="true" size={19} /> : pending ? "Загружаем…" : avatarUrl ? "Заменить аватар" : "Добавить аватар"}
         </button>
-        <small className="field-help">JPG, PNG, WebP или GIF, до 5 МБ.</small>
+        {!iconOnly && <small className="field-help">JPG, PNG, WebP или GIF, до 5 МБ.</small>}
         {message && <p className="field-help" role="status">{message}</p>}
       </div>
     </div>

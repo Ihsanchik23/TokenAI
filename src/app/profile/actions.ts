@@ -84,6 +84,7 @@ export async function saveProfileAction(
   }
 
   revalidatePath("/profile");
+  revalidatePath("/profile/edit");
   revalidatePath("/onboarding");
   revalidatePath(`/students/${username}`);
 
@@ -116,6 +117,7 @@ export async function updateAvatarPath(path: string) {
   }
 
   revalidatePath("/profile");
+  revalidatePath("/profile/edit");
   revalidatePath("/onboarding");
 
   return { error: null };
