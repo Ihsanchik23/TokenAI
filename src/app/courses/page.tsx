@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Clock3, Star } from "lucide-react";
+import { Clock3, Gauge, Star } from "lucide-react";
 import { CatalogCourseAction } from "@/components/catalog-course-action";
 import { CatalogFilters } from "@/components/catalog-filters";
 import { getOptionalUser } from "@/lib/auth";
@@ -13,7 +13,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   const { data: topics } = await supabase.from("topics").select("id,name,slug").order("name");
   let ids: string[] | null = null;
   if (filters.topic) { const topic = topics?.find((item) => item.slug === filters.topic); if (topic) { const { data } = await supabase.from("course_topics").select("course_id").eq("topic_id", topic.id); ids = (data ?? []).map((row) => row.course_id); } }
-  let query = supabase.from("courses").select("id,slug,title,short_description,cover_path,access_type,price_amount,currency,level,estimated_minutes,created_at,course_topics(topics(name,slug))").eq("status", "published");
+  let query = supabase.from("courses").select("id,slug,title,short_description,cover_path,access_type,price_amount,currency,level,estimated_minutes,created_at").eq("status", "published");
   if (filters.q?.trim()) query = query.ilike("title", `%${filters.q.trim()}%`);
   if (["beginner", "intermediate", "advanced"].includes(filters.level ?? "")) query = query.eq("level", filters.level!);
   if (["free", "paid", "private"].includes(filters.access ?? "")) query = query.eq("access_type", filters.access!);
@@ -43,25 +43,22 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
         {!catalogError && courses?.length ? courses.map((course) => {
           const cover = getCourseCoverUrl(course.cover_path);
           const review = reviews.get(course.id);
-          const topicName = course.course_topics[0]?.topics[0]?.name;
           return (
             <article className="learning-course-card" key={course.id}>
               <Link className="course-card-cover" href={`/courses/${course.slug}`} aria-label={`Открыть курс «${course.title}»`}>
                 {cover ? <Image src={cover} alt="" fill sizes="(max-width: 700px) 100vw, 50vw" /> : <div className="cover-placeholder">TokenAI</div>}
               </Link>
               <div className="course-card-content">
-                <div className="course-card-kicker">{topicName && <span>{topicName}</span>}<span>{levelLabels[course.level]}</span></div>
                 <h2><Link href={`/courses/${course.slug}`}>{course.title}</Link></h2>
                 <p className="muted course-card-description">{course.short_description || "Описание скоро появится."}</p>
+                <div className="course-card-facts">
+                  <span><Gauge aria-hidden="true" size={15} />{levelLabels[course.level]}</span>
+                  {review && review.count > 0 && <span><Star aria-hidden="true" size={15} fill="currentColor" />{review.average}</span>}
+                  {course.estimated_minutes && <span><Clock3 aria-hidden="true" size={15} />{course.estimated_minutes} мин</span>}
+                </div>
                 <div className="course-card-footer">
                   <strong>{formatCoursePrice(course.access_type, course.price_amount, course.currency)}</strong>
-                  <div className="course-card-footer-side">
-                    <div className="course-card-facts">
-                      {review && review.count > 0 && <span><Star aria-hidden="true" size={15} fill="currentColor" />{review.average} ({review.count})</span>}
-                      {course.estimated_minutes && <span><Clock3 aria-hidden="true" size={15} />{course.estimated_minutes} мин</span>}
-                    </div>
-                    <CatalogCourseAction courseId={course.id} slug={course.slug} accessType={course.access_type} authenticated={Boolean(user)} enrolled={enrolledCourseIds.has(course.id)} />
-                  </div>
+                  <CatalogCourseAction courseId={course.id} slug={course.slug} accessType={course.access_type} authenticated={Boolean(user)} enrolled={enrolledCourseIds.has(course.id)} />
                 </div>
               </div>
             </article>
