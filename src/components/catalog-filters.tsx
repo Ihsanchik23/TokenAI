@@ -35,8 +35,8 @@ function FilterGroup({ legend, name, options, value, onChange }: { legend: strin
 export function CatalogFilters({ topics, filters }: { topics: Topic[]; filters: Filters }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(filters.q ?? "");
   const [draft, setDraft] = useState({
-    q: filters.q ?? "",
     topic: filters.topic ?? "",
     level: filters.level ?? "",
     access: filters.access ?? "",
@@ -44,13 +44,12 @@ export function CatalogFilters({ topics, filters }: { topics: Topic[]; filters: 
   });
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const activeFilterCount = [filters.q, filters.topic, filters.level, filters.access, filters.sort && filters.sort !== "newest"].filter(Boolean).length;
-  const formKey = [filters.q, filters.topic, filters.level, filters.access, filters.sort].join("|");
+  const formKey = [filters.topic, filters.level, filters.access, filters.sort].join("|");
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const params = new URLSearchParams();
-    if (draft.q.trim()) params.set("q", draft.q.trim());
+    if (searchQuery.trim()) params.set("q", searchQuery.trim());
     if (draft.topic) params.set("topic", draft.topic);
     if (draft.level) params.set("level", draft.level);
     if (draft.access) params.set("access", draft.access);
@@ -59,6 +58,21 @@ export function CatalogFilters({ topics, filters }: { topics: Topic[]; filters: 
     const query = params.toString();
     router.push(query ? `/courses?${query}` : "/courses");
   }
+
+  useEffect(() => {
+    if (searchQuery.trim() === (filters.q ?? "").trim()) return;
+    const timeout = window.setTimeout(() => {
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.set("q", searchQuery.trim());
+      if (filters.topic) params.set("topic", filters.topic);
+      if (filters.level) params.set("level", filters.level);
+      if (filters.access) params.set("access", filters.access);
+      if (filters.sort && filters.sort !== "newest") params.set("sort", filters.sort);
+      const query = params.toString();
+      router.replace(query ? `/courses?${query}` : "/courses");
+    }, 280);
+    return () => window.clearTimeout(timeout);
+  }, [filters.access, filters.level, filters.q, filters.sort, filters.topic, router, searchQuery]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,17 +108,22 @@ export function CatalogFilters({ topics, filters }: { topics: Topic[]; filters: 
   }, [open]);
 
   return (
-    <section className="catalog-controls" aria-label="Поиск и фильтры курсов">
+    <section className="search-filter-controls" aria-label="Поиск и фильтры курсов">
+      <label className="live-search-control">
+        <Search aria-hidden="true" size={18} />
+        <span className="visually-hidden">Поиск курса</span>
+        <input name="q" placeholder="Найти курс" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
+      </label>
       <button
         ref={triggerRef}
-        className="button secondary catalog-filter-trigger"
+        className="icon-filter-trigger"
         type="button"
         onClick={() => setOpen(true)}
         aria-expanded={open}
         aria-controls="catalog-filter-panel"
+        aria-label="Открыть фильтры"
       >
         <SlidersHorizontal aria-hidden="true" size={18} />
-        Фильтры{activeFilterCount ? <span>{activeFilterCount}</span> : null}
       </button>
 
       {open && (
@@ -118,11 +137,6 @@ export function CatalogFilters({ topics, filters }: { topics: Topic[]; filters: 
             </header>
 
             <form key={formKey} className="catalog-filter-form" onSubmit={applyFilters}>
-              <label className="catalog-filter-search">
-                <span>Поиск</span>
-                <span className="catalog-filter-search-control"><Search aria-hidden="true" size={18} /><input name="q" placeholder="Название курса" value={draft.q} onChange={(event) => setDraft((current) => ({ ...current, q: event.target.value }))} /></span>
-              </label>
-
               <div className="catalog-filter-grid">
                 <FilterGroup
                   legend="Тема"
@@ -155,7 +169,7 @@ export function CatalogFilters({ topics, filters }: { topics: Topic[]; filters: 
               </div>
 
               <div className="catalog-filter-actions">
-                <Link className="button secondary" href="/courses" onClick={() => setOpen(false)}>Сбросить</Link>
+                <Link className="button secondary" href={searchQuery.trim() ? `/courses?q=${encodeURIComponent(searchQuery.trim())}` : "/courses"} onClick={() => setOpen(false)}>Сбросить</Link>
                 <button className="button" type="submit">Применить<Search aria-hidden="true" size={17} /></button>
               </div>
             </form>

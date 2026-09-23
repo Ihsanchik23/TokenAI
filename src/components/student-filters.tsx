@@ -14,19 +14,9 @@ export function StudentFilters({ topics, query, selectedTopics }: { topics: Topi
   const [draftTopics, setDraftTopics] = useState(selectedTopics);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const activeFilterCount = selectedTopics.length;
 
   function toggleTopic(slug: string) {
     setDraftTopics((current) => current.includes(slug) ? current.filter((item) => item !== slug) : [...current, slug]);
-  }
-
-  function searchStudents(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const params = new URLSearchParams();
-    if (searchQuery.trim()) params.set("q", searchQuery.trim());
-    selectedTopics.forEach((topic) => params.append("topic", topic));
-    const value = params.toString();
-    router.push(value ? `/students?${value}` : "/students");
   }
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
@@ -38,6 +28,18 @@ export function StudentFilters({ topics, query, selectedTopics }: { topics: Topi
     const value = params.toString();
     router.push(value ? `/students?${value}` : "/students");
   }
+
+  useEffect(() => {
+    if (searchQuery.trim() === query.trim()) return;
+    const timeout = window.setTimeout(() => {
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.set("q", searchQuery.trim());
+      selectedTopics.forEach((topic) => params.append("topic", topic));
+      const value = params.toString();
+      router.replace(value ? `/students?${value}` : "/students");
+    }, 280);
+    return () => window.clearTimeout(timeout);
+  }, [query, router, searchQuery, selectedTopics]);
 
   useEffect(() => {
     if (!open) return;
@@ -73,18 +75,14 @@ export function StudentFilters({ topics, query, selectedTopics }: { topics: Topi
   }, [open]);
 
   return (
-    <section className="student-directory-controls" aria-label="Поиск и фильтры студентов">
-      <form className="student-search-form" role="search" onSubmit={searchStudents}>
-        <label className="student-search-control">
-          <Search aria-hidden="true" size={18} />
-          <span className="visually-hidden">Поиск студента</span>
-          <input name="q" placeholder="Имя или фамилия" maxLength={80} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
-        </label>
-        <button className="student-search-submit" type="submit" aria-label="Найти"><Search aria-hidden="true" size={18} /></button>
-      </form>
-      <button ref={triggerRef} className="button secondary catalog-filter-trigger" type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-controls="student-filter-panel">
-        <SlidersHorizontal aria-hidden="true" size={18} />
-        Фильтры{activeFilterCount ? <span>{activeFilterCount}</span> : null}
+    <section className="search-filter-controls" aria-label="Поиск и фильтры студентов">
+      <label className="live-search-control">
+        <Search aria-hidden="true" size={18} />
+        <span className="visually-hidden">Поиск студента</span>
+        <input name="q" placeholder="Имя или фамилия" maxLength={80} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
+      </label>
+      <button ref={triggerRef} className="icon-filter-trigger" type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-controls="student-filter-panel" aria-label="Открыть фильтры">
+        <SlidersHorizontal aria-hidden="true" size={19} />
       </button>
 
       {open && (

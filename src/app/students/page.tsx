@@ -36,7 +36,6 @@ export default async function StudentsPage({ searchParams }: PageProps<"/student
         <Link href="/showcase">Работы</Link>
       </nav>
       <StudentFilters key={[q, ...selectedTopics].join("|")} topics={(topicRows ?? []) as PublicTopic[]} query={q} selectedTopics={selectedTopics} />
-      <div className="community-result-count"><span>Найдено</span><strong>{result.total}</strong></div>
       <section className="student-list" aria-label="Список студентов">{result.items.length ? result.items.map((student) => <StudentCard student={student} key={student.id} />) : <div className="community-empty"><span aria-hidden="true">0</span><h2>Профили не найдены</h2><p className="muted">Измените имя или выбранный интерес.</p><Link className="button secondary" href="/students">Сбросить фильтры</Link></div>}</section>
       {totalPages > 1 && <nav className="pagination">{result.page > 1 && <Link className="button secondary" href={pageHref({ q, topics: selectedTopics }, result.page - 1)}>← Назад</Link>}<span>Страница {result.page} из {totalPages}</span>{result.page < totalPages && <Link className="button secondary" href={pageHref({ q, topics: selectedTopics }, result.page + 1)}>Далее →</Link>}</nav>}
     </main>

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ArrowRight, Award, BookOpen, CheckCircle2 } from "lucide-react";
 import { startCourseAction } from "@/app/enrollment/actions";
 import { CertificateCard } from "@/components/certificate-card";
+import { MyCoursesControls } from "@/components/my-courses-controls";
 import { requireUser } from "@/lib/auth";
 import { getCertificateDownloadUrl } from "@/lib/certificates";
 import { getCourseCoverUrl } from "@/lib/course-utils";
@@ -11,7 +12,7 @@ import { getLearningState } from "@/lib/learning";
 import { ensureMyProfile, getMyProfile, isProfileComplete } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function MyCoursesPage({ searchParams }: { searchParams: Promise<{ payment?: string; course?: string; status?: string }> }) {
+export default async function MyCoursesPage({ searchParams }: { searchParams: Promise<{ payment?: string; course?: string; status?: string; q?: string }> }) {
   const [user, query] = await Promise.all([requireUser(), searchParams]);
   const supabase = await createClient();
   await ensureMyProfile(supabase);
@@ -38,7 +39,11 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
   const activeEnrollments = enrollments.filter((enrollment) => enrollment.status !== "completed" && !learningByEnrollment.get(enrollment.id)?.learningComplete);
   const completedEnrollments = enrollments.filter((enrollment) => enrollment.status === "completed" || learningByEnrollment.get(enrollment.id)?.learningComplete);
   const selectedStatus = query.status === "completed" ? "completed" : "active";
-  const visibleEnrollments = selectedStatus === "completed" ? completedEnrollments : activeEnrollments;
+  const searchQuery = typeof query.q === "string" ? query.q.trim().slice(0, 80) : "";
+  const selectedEnrollments = selectedStatus === "completed" ? completedEnrollments : activeEnrollments;
+  const visibleEnrollments = searchQuery ? selectedEnrollments.filter((enrollment) => courseById.get(enrollment.course_id)?.title.toLocaleLowerCase("ru").includes(searchQuery.toLocaleLowerCase("ru"))) : selectedEnrollments;
+  const activeHref = searchQuery ? `/my-courses?q=${encodeURIComponent(searchQuery)}` : "/my-courses";
+  const completedHref = `/my-courses?${new URLSearchParams({ ...(searchQuery ? { q: searchQuery } : {}), status: "completed" })}`;
 
   function compactCourse(enrollment: typeof enrollments[number]) {
     const course = courseById.get(enrollment.course_id);
@@ -76,13 +81,14 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
       <header className="my-courses-heading"><p className="eyebrow">Обучение</p><h1>Мои курсы</h1></header>
       {query.payment === "success" && <p className="notice success">Покупка подтверждена. Курс добавлен в «Мои курсы» — нажмите «Начать курс», когда будете готовы.</p>}
       {query.course === "unavailable" && <p className="notice">Доступ к курсу недоступен или истёк.</p>}
+      <MyCoursesControls key={`${searchQuery}|${selectedStatus}`} query={searchQuery} status={selectedStatus} />
       <div className="my-course-sections">
         <nav className="learning-tabs" aria-label="Разделы моих курсов">
-          <Link className={selectedStatus === "active" ? "active" : undefined} href="/my-courses" aria-current={selectedStatus === "active" ? "page" : undefined}>Активные <span>{activeEnrollments.length}</span></Link>
-          <Link className={selectedStatus === "completed" ? "active" : undefined} href="/my-courses?status=completed" aria-current={selectedStatus === "completed" ? "page" : undefined}>Завершённые <span>{completedEnrollments.length}</span></Link>
+          <Link className={selectedStatus === "active" ? "active" : undefined} href={activeHref} aria-current={selectedStatus === "active" ? "page" : undefined}>Активные <span>{activeEnrollments.length}</span></Link>
+          <Link className={selectedStatus === "completed" ? "active" : undefined} href={completedHref} aria-current={selectedStatus === "completed" ? "page" : undefined}>Завершённые <span>{completedEnrollments.length}</span></Link>
         </nav>
         <section className="my-course-section" aria-label={selectedStatus === "completed" ? "Завершённые курсы" : "Активные курсы"}>
-          <div className="learning-course-grid my-course-list">{visibleEnrollments.length ? visibleEnrollments.map(compactCourse) : <div className="my-courses-minimal-empty"><p>{selectedStatus === "completed" ? "Завершённых курсов пока нет." : "Активных курсов пока нет."}</p>{!enrollments.length && <Link className="button secondary" href="/courses">Открыть каталог</Link>}</div>}</div>
+          <div className="learning-course-grid my-course-list">{visibleEnrollments.length ? visibleEnrollments.map(compactCourse) : <div className="my-courses-minimal-empty"><p>{searchQuery ? "Курсы по этому запросу не найдены." : selectedStatus === "completed" ? "Завершённых курсов пока нет." : "Активных курсов пока нет."}</p>{!enrollments.length && <Link className="button secondary" href="/courses">Открыть каталог</Link>}</div>}</div>
           {selectedStatus === "completed" && completedEnrollments.map((enrollment) => { const certificate = certificateByEnrollment.get(enrollment.id); const course = courseById.get(enrollment.course_id); return certificate && course && !certificate.downloadUrl ? <CertificateCard certificate={{ ...certificate, courseTitle: course.title }} key={certificate.id} /> : null; })}
         </section>
       </div>
