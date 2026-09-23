@@ -2519,10 +2519,10 @@ input[type="radio"] {
 }
 .home-hero-content { align-items: center; display: flex; justify-content: center; min-height: inherit; padding-bottom: clamp(58px, 9vw, 110px); padding-top: clamp(58px, 9vw, 110px); text-align: center; }
 .home-hero-copy { align-items: center; display: flex; flex-direction: column; gap: clamp(22px, 3vw, 32px); max-width: 980px; }
-.home-hero-copy h1 { color: #fff; font-size: clamp(3.6rem, 8.4vw, 9.2rem); letter-spacing: -.085em; line-height: .86; text-wrap: balance; }
-.home-hero-copy > p { color: rgba(255, 255, 255, .8); font-size: clamp(1rem, 1.7vw, 1.28rem); line-height: 1.55; max-width: 610px; text-wrap: balance; }
+.home-hero-copy h1 { color: #fff; font-size: clamp(3.2rem, 6.7vw, 7.2rem); font-weight: 540; letter-spacing: -.072em; line-height: .92; text-wrap: balance; }
+.home-hero-copy > p { color: rgba(255, 255, 255, .8); font-size: clamp(.9rem, 1.35vw, 1.08rem); line-height: 1.55; max-width: 560px; text-wrap: balance; }
 .home-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.home-hero-actions .button { min-height: 48px; padding-inline: 20px; }
+.home-hero-actions .button { border-radius: 999px; font-size: .86rem; min-height: 42px; padding: 8px 17px; }
 .home-login-button { background: rgba(9, 12, 10, .42); border-color: rgba(255, 255, 255, .38); color: #fff; backdrop-filter: blur(10px); }
 .home-login-button:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .7); color: #fff; }
 
@@ -2540,7 +2540,9 @@ input[type="radio"] {
 .home-description-copy strong { color: var(--text-primary); font-weight: 700; }
 
 .creators-section { align-items: center; display: grid; gap: clamp(34px, 7vw, 104px); grid-template-columns: minmax(230px, .6fr) minmax(420px, 1.4fr); }
-.creators-heading { align-content: start; display: grid; gap: 14px; }
+.creators-heading { align-content: start; align-self: start; display: grid; gap: 14px; }
+.creator-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.creator-links .button { border-radius: 999px; font-size: .78rem; gap: 7px; min-height: 40px; padding: 8px 14px; }
 .creators-stage { height: clamp(470px, 47vw, 680px); isolation: isolate; margin-right: clamp(0px, 3vw, 44px); position: relative; }
 .creator-card { border-radius: clamp(16px, 2vw, 25px); box-shadow: 0 30px 70px rgba(0, 0, 0, .28); height: auto; position: absolute; transition: transform 260ms ease; width: clamp(245px, 27vw, 356px); z-index: 2; }
 .creator-card-one { left: 5%; top: 7%; transform: rotate(-5deg); }
@@ -2582,10 +2584,11 @@ input[type="radio"] {
   .home-hero-shade { background: linear-gradient(180deg, rgba(4, 7, 5, .44) 0%, rgba(4, 7, 5, .44) 44%, rgba(4, 7, 5, .88) 100%); }
   .home-hero-content { align-items: flex-end; padding-bottom: max(74px, env(safe-area-inset-bottom)); padding-top: 45px; }
   .home-hero-copy { gap: 20px; }
-  .home-hero-copy h1 { font-size: clamp(3.3rem, 15vw, 5rem); line-height: .88; }
-  .home-hero-copy > p { font-size: 1rem; max-width: 350px; }
+  .home-hero-copy h1 { font-size: clamp(2.45rem, 10vw, 3.25rem); line-height: .94; }
+  .home-hero-copy > p { font-size: .9rem; max-width: 330px; }
   .home-hero-actions { display: grid; grid-template-columns: 1fr; width: min(100%, 330px); }
   .home-hero-actions .button { justify-content: center; width: 100%; }
+  .home-description-break { display: none; }
   .home-description-heading h2,
   .creators-heading h2,
   .faq-section h2 { font-size: clamp(2.65rem, 12vw, 4.25rem); }
@@ -2596,9 +2599,13 @@ input[type="radio"] {
   .creator-card-two { right: 3%; top: 21%; }
   .creator-glow-one { filter: blur(48px); height: 150px; width: 150px; }
   .creator-glow-two { filter: blur(48px); height: 160px; width: 160px; }
+  .creator-links { margin-top: 6px; }
+  :root[data-theme="light"] .home-description,
+  :root[data-theme="light"] .creators-section,
+  :root[data-theme="light"] .faq-section { border-top: 0; }
 }
 
 @media (max-width: 390px) {
-  .home-hero-copy h1 { font-size: 3.25rem; }
+  .home-hero-copy h1 { font-size: 2.4rem; }
   .creators-stage { height: 430px; }
 }

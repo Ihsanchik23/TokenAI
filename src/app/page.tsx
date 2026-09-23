@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, AtSign } from "lucide-react";
 import { getOptionalUser } from "@/lib/auth";
 import { getCourseCoverUrl } from "@/lib/course-utils";
 import { getLearningState } from "@/lib/learning";
@@ -80,7 +80,7 @@ export default async function Home() {
       <section className="home-description page-shell" aria-labelledby="about-heading">
         <div className="home-description-heading">
           <p className="eyebrow">Что такое TokenAI</p>
-          <h2 id="about-heading">Платформа курсов<br />по <span>искусственному интеллекту.</span></h2>
+          <h2 id="about-heading">Платформа курсов<br className="home-description-break" />&nbsp;по <span>искусственному интеллекту.</span></h2>
         </div>
         <div className="home-description-copy">
           <p>TokenAI объединяет теорию, практические задания, тесты и видеоуроки, чтобы обучение превращалось в реальный навык.</p>
@@ -89,7 +89,18 @@ export default async function Home() {
       </section>
 
       <section className="creators-section page-shell" aria-labelledby="creators-heading">
-        <div className="creators-heading"><p className="eyebrow">Создатели</p><h2 id="creators-heading">Люди ТокенИИ</h2></div>
+        <div className="creators-heading">
+          <p className="eyebrow">Авторы TokenAI</p>
+          <h2 id="creators-heading">Люди ТокенИИ</h2>
+          <div className="creator-links" aria-label="Instagram авторов TokenAI">
+            <a className="button secondary" href="https://www.instagram.com/iwpusqanda/" target="_blank" rel="noreferrer">
+              <AtSign aria-hidden="true" size={16} />iwpusqanda
+            </a>
+            <a className="button secondary" href="https://www.instagram.com/farkhadooov/" target="_blank" rel="noreferrer">
+              <AtSign aria-hidden="true" size={16} />farkhadooov
+            </a>
+          </div>
+        </div>
         <div className="creators-stage">
           <div className="creator-glow creator-glow-one" aria-hidden="true" />
           <div className="creator-glow creator-glow-two" aria-hidden="true" />
