@@ -11,6 +11,7 @@ import {
   Gauge,
   ImageIcon,
   KeyRound,
+  UsersRound,
 } from "lucide-react";
 
 const links = [
@@ -24,7 +25,7 @@ const links = [
 export function StudioNavigation({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
   const visibleLinks = isAdmin
-    ? [...links, { href: "/admin/access", label: "Доступ", icon: KeyRound, exact: false as const }]
+    ? [...links, { href: "/admin/users", label: "Пользователи", icon: UsersRound, exact: false as const }, { href: "/admin/access", label: "Доступ", icon: KeyRound, exact: false as const }]
     : links;
 
   const active = (href: string, exact?: boolean) => exact ? pathname === href : pathname.startsWith(href);
