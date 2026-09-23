@@ -2582,7 +2582,7 @@ input[type="radio"] {
 @media (max-width: 700px) {
   .home-video-hero { min-height: calc(100svh - var(--shell-height)); }
   .home-hero-shade { background: linear-gradient(180deg, rgba(4, 7, 5, .44) 0%, rgba(4, 7, 5, .44) 44%, rgba(4, 7, 5, .88) 100%); }
-  .home-hero-content { align-items: flex-end; padding-bottom: max(74px, env(safe-area-inset-bottom)); padding-top: 45px; }
+  .home-hero-content { align-items: center; padding-bottom: 45px; padding-top: 45px; }
   .home-hero-copy { gap: 20px; }
   .home-hero-copy h1 { font-size: clamp(2.45rem, 10vw, 3.25rem); line-height: .94; }
   .home-hero-copy > p { font-size: .9rem; max-width: 330px; }
@@ -2593,7 +2593,7 @@ input[type="radio"] {
   .creators-heading h2,
   .faq-section h2 { font-size: clamp(2.65rem, 12vw, 4.25rem); }
   .home-description-copy { gap: 16px; }
-  .creators-stage { height: min(119vw, 460px); max-width: 430px; overflow: hidden; }
+  .creators-stage { height: min(119vw, 460px); max-width: 430px; }
   .creator-card { width: min(55vw, 230px); }
   .creator-card-one { left: 4%; top: 8%; }
   .creator-card-two { right: 3%; top: 21%; }

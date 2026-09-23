@@ -90,8 +90,8 @@ export default async function Home() {
 
       <section className="creators-section page-shell" aria-labelledby="creators-heading">
         <div className="creators-heading">
-          <p className="eyebrow">Авторы TokenAI</p>
-          <h2 id="creators-heading">Люди ТокенИИ</h2>
+          <p className="eyebrow">Создатели</p>
+          <h2 id="creators-heading">Авторы TokenAI</h2>
           <div className="creator-links" aria-label="Instagram авторов TokenAI">
             <a className="button secondary" href="https://www.instagram.com/iwpusqanda/" target="_blank" rel="noreferrer">
               <AtSign aria-hidden="true" size={16} />iwpusqanda
