@@ -1444,8 +1444,15 @@ input[type="radio"] {
 .learning-tabs a.active { color: var(--text-primary); box-shadow: 0 2px 0 var(--accent); }
 .learning-tabs span { background: var(--surface-elevated); border-radius: 99px; font-size: .7rem; margin-left: 5px; padding: 3px 7px; }
 .my-course-section { display: grid; gap: 18px; scroll-margin-top: calc(var(--shell-height) + 20px); }
-.my-course-list { border-top: 1px solid var(--border); }
-.my-courses-minimal-empty { align-items: center; color: var(--text-secondary); display: flex; justify-content: space-between; min-height: 150px; padding: 28px 0; }
+.my-course-list { border-top: 0; }
+.my-courses-minimal-empty { align-items: center; color: var(--text-secondary); display: flex; grid-column: 1 / -1; justify-content: space-between; min-height: 150px; padding: 28px 0; }
+.my-course-progress { border-top: 1px solid var(--border); display: grid; gap: 8px; margin-top: auto; padding-top: 13px; }
+.my-course-progress > div:first-child { align-items: center; color: var(--text-secondary); display: flex; font-size: .72rem; justify-content: space-between; }
+.my-course-progress > div:first-child strong { color: var(--text-primary); font-size: .76rem; }
+.my-course-card-status { align-items: center; color: var(--accent); display: flex; font-size: .7rem !important; gap: 5px; text-transform: uppercase; }
+.my-course-card-actions { align-items: end; display: grid; gap: 5px; justify-items: end; }
+.my-course-card-actions form { display: contents; }
+.my-course-card-actions .certificate-link { font-size: .68rem; }
 .my-course-row { align-items: center; border-bottom: 1px solid var(--border); display: grid; gap: 22px; grid-template-columns: 180px minmax(0, 1fr) auto; padding: 18px 0; }
 .my-course-thumb { aspect-ratio: 16 / 9; border-radius: var(--radius-md); overflow: hidden; position: relative; }
 .my-course-thumb img { object-fit: cover; }
@@ -1712,6 +1719,14 @@ input[type="radio"] {
 .community-heading h1 { font-size: clamp(3rem, 6vw, 5.8rem); line-height: .92; }
 .community-tabs { margin-top: 8px; }
 .community-tabs a { min-width: 86px; text-align: center; }
+.student-directory-controls { align-items: center; display: grid; gap: 10px; grid-template-columns: minmax(260px, 520px) auto; justify-content: start; }
+.student-search-form { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) 46px; min-width: 0; }
+.student-search-control { align-items: center; background: var(--surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); color: var(--text-secondary); display: flex; gap: 9px; min-width: 0; padding-left: 14px; }
+.student-search-control:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-ring); }
+.student-search-control input { background: transparent; border: 0; box-shadow: none; min-width: 0; padding-left: 0; }
+.student-search-submit { align-items: center; background: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-md); color: var(--accent-text); cursor: pointer; display: flex; justify-content: center; transition: box-shadow 160ms ease, transform 160ms ease; }
+.student-search-submit:hover { box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 32%, transparent); transform: translateY(-1px); }
+.student-search-submit:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .community-filter {
   align-items: center;
   display: grid;
@@ -1960,6 +1975,9 @@ input[type="radio"] {
 @media (max-width: 700px) {
   .community-page { gap: 26px; }
   .community-heading h1 { font-size: clamp(2.8rem, 14vw, 4.2rem); }
+  .student-directory-controls { grid-template-columns: minmax(0, 1fr) auto; }
+  .student-search-form { grid-template-columns: minmax(0, 1fr) 42px; }
+  .student-directory-controls .catalog-filter-trigger { min-height: 48px; padding-inline: 13px; }
   .community-filter,
   .showcase-filter { grid-template-columns: minmax(0, 1fr) auto; }
   .community-filter .community-select,

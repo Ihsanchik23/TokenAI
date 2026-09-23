@@ -48,18 +48,24 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
     const completed = enrollment.status === "completed" || Boolean(state?.learningComplete);
     const progress = state?.progressPercent ?? (completed ? 100 : 0);
     const cover = getCourseCoverUrl(course.cover_path);
+    const courseHref = enrollment.started_at ? `/learn/${course.slug}` : `/courses/${course.slug}`;
     return (
-      <article className="my-course-row" key={enrollment.id}>
-        <div className="my-course-thumb">{cover ? <Image src={cover} alt="" fill sizes="(max-width: 700px) 112px, 180px" /> : <div className="cover-placeholder">T</div>}</div>
-        <div className="my-course-copy">
-          <div className="my-course-status">{completed ? <><CheckCircle2 aria-hidden="true" size={15} />Завершён</> : <><BookOpen aria-hidden="true" size={15} />В процессе</>}</div>
-          <h3>{course.title}</h3>
-          {state?.continueLesson && <p className="muted">Далее: {state.continueLesson.title}</p>}
-          <div className="continue-progress"><div className="progress-track"><span style={{ width: `${progress}%` }} /></div><span>{progress}%</span></div>
-        </div>
-        <div className="my-course-actions">
-          {enrollment.started_at ? <Link className="button secondary" href={`/learn/${course.slug}`}>{completed ? "Открыть итоги" : "Продолжить"}<ArrowRight aria-hidden="true" size={17} /></Link> : <form action={startCourseAction.bind(null, course.id)}><button className="button secondary">Начать</button></form>}
-          {certificate?.downloadUrl && <a className="certificate-link" href={certificate.downloadUrl} target="_blank" rel="noreferrer"><Award aria-hidden="true" size={17} />Сертификат</a>}
+      <article className="learning-course-card my-learning-card" key={enrollment.id}>
+        <Link className="course-card-cover" href={courseHref} aria-label={`Открыть курс «${course.title}»`}>{cover ? <Image src={cover} alt="" fill sizes="(max-width: 700px) 50vw, 25vw" /> : <div className="cover-placeholder">TokenAI</div>}</Link>
+        <div className="course-card-content">
+          <h2><Link href={courseHref}>{course.title}</Link></h2>
+          <p className="muted course-card-description">{state?.continueLesson ? `Следующий урок: ${state.continueLesson.title}` : completed ? "Курс полностью пройден." : "Курс готов к началу."}</p>
+          <div className="my-course-progress">
+            <div><span>Пройдено</span><strong>{progress}%</strong></div>
+            <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
+          </div>
+          <div className="course-card-footer my-course-card-footer">
+            <strong className="my-course-card-status">{completed ? <><CheckCircle2 aria-hidden="true" size={14} />Завершён</> : <><BookOpen aria-hidden="true" size={14} />Активный</>}</strong>
+            <div className="my-course-card-actions">
+              {enrollment.started_at ? <Link className="catalog-card-action" href={`/learn/${course.slug}`}>{completed ? "Итоги" : "Продолжить"}<ArrowRight aria-hidden="true" size={15} /></Link> : <form action={startCourseAction.bind(null, course.id)}><button className="catalog-card-action" type="submit">Начать<ArrowRight aria-hidden="true" size={15} /></button></form>}
+              {certificate?.downloadUrl && <a className="certificate-link" href={certificate.downloadUrl} target="_blank" rel="noreferrer"><Award aria-hidden="true" size={15} />Сертификат</a>}
+            </div>
+          </div>
         </div>
       </article>
     );
@@ -76,7 +82,7 @@ export default async function MyCoursesPage({ searchParams }: { searchParams: Pr
           <Link className={selectedStatus === "completed" ? "active" : undefined} href="/my-courses?status=completed" aria-current={selectedStatus === "completed" ? "page" : undefined}>Завершённые <span>{completedEnrollments.length}</span></Link>
         </nav>
         <section className="my-course-section" aria-label={selectedStatus === "completed" ? "Завершённые курсы" : "Активные курсы"}>
-          <div className="my-course-list">{visibleEnrollments.length ? visibleEnrollments.map(compactCourse) : <div className="my-courses-minimal-empty"><p>{selectedStatus === "completed" ? "Завершённых курсов пока нет." : "Активных курсов пока нет."}</p>{!enrollments.length && <Link className="button secondary" href="/courses">Открыть каталог</Link>}</div>}</div>
+          <div className="learning-course-grid my-course-list">{visibleEnrollments.length ? visibleEnrollments.map(compactCourse) : <div className="my-courses-minimal-empty"><p>{selectedStatus === "completed" ? "Завершённых курсов пока нет." : "Активных курсов пока нет."}</p>{!enrollments.length && <Link className="button secondary" href="/courses">Открыть каталог</Link>}</div>}</div>
           {selectedStatus === "completed" && completedEnrollments.map((enrollment) => { const certificate = certificateByEnrollment.get(enrollment.id); const course = courseById.get(enrollment.course_id); return certificate && course && !certificate.downloadUrl ? <CertificateCard certificate={{ ...certificate, courseTitle: course.title }} key={certificate.id} /> : null; })}
         </section>
       </div>

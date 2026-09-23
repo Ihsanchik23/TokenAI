@@ -10,20 +10,29 @@ type Topic = { id: string; name: string; slug: string };
 export function StudentFilters({ topics, query, selectedTopics }: { topics: Topic[]; query: string; selectedTopics: string[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [draftQuery, setDraftQuery] = useState(query);
+  const [searchQuery, setSearchQuery] = useState(query);
   const [draftTopics, setDraftTopics] = useState(selectedTopics);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const activeFilterCount = (query ? 1 : 0) + selectedTopics.length;
+  const activeFilterCount = selectedTopics.length;
 
   function toggleTopic(slug: string) {
     setDraftTopics((current) => current.includes(slug) ? current.filter((item) => item !== slug) : [...current, slug]);
   }
 
+  function searchStudents(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.set("q", searchQuery.trim());
+    selectedTopics.forEach((topic) => params.append("topic", topic));
+    const value = params.toString();
+    router.push(value ? `/students?${value}` : "/students");
+  }
+
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const params = new URLSearchParams();
-    if (draftQuery.trim()) params.set("q", draftQuery.trim());
+    if (searchQuery.trim()) params.set("q", searchQuery.trim());
     draftTopics.forEach((topic) => params.append("topic", topic));
     setOpen(false);
     const value = params.toString();
@@ -64,7 +73,15 @@ export function StudentFilters({ topics, query, selectedTopics }: { topics: Topi
   }, [open]);
 
   return (
-    <section className="catalog-controls" aria-label="Поиск и фильтры студентов">
+    <section className="student-directory-controls" aria-label="Поиск и фильтры студентов">
+      <form className="student-search-form" role="search" onSubmit={searchStudents}>
+        <label className="student-search-control">
+          <Search aria-hidden="true" size={18} />
+          <span className="visually-hidden">Поиск студента</span>
+          <input name="q" placeholder="Имя или фамилия" maxLength={80} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
+        </label>
+        <button className="student-search-submit" type="submit" aria-label="Найти"><Search aria-hidden="true" size={18} /></button>
+      </form>
       <button ref={triggerRef} className="button secondary catalog-filter-trigger" type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-controls="student-filter-panel">
         <SlidersHorizontal aria-hidden="true" size={18} />
         Фильтры{activeFilterCount ? <span>{activeFilterCount}</span> : null}
@@ -74,16 +91,11 @@ export function StudentFilters({ topics, query, selectedTopics }: { topics: Topi
         <div className="catalog-filter-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <div id="student-filter-panel" className="catalog-filter-panel student-filter-panel" role="dialog" aria-modal="true" aria-labelledby="student-filter-title" ref={panelRef} tabIndex={-1}>
             <header className="catalog-filter-header">
-              <div><p className="eyebrow">Студенты</p><h2 id="student-filter-title">Найти участника</h2></div>
+              <div><p className="eyebrow">Студенты</p><h2 id="student-filter-title">Направления</h2></div>
               <button className="utility-button" type="button" onClick={() => setOpen(false)} aria-label="Закрыть фильтры"><X aria-hidden="true" size={20} /></button>
             </header>
 
             <form className="catalog-filter-form" onSubmit={applyFilters}>
-              <label className="catalog-filter-search">
-                <span>Поиск</span>
-                <span className="catalog-filter-search-control"><Search aria-hidden="true" size={18} /><input name="q" placeholder="Имя или фамилия" maxLength={80} value={draftQuery} onChange={(event) => setDraftQuery(event.target.value)} /></span>
-              </label>
-
               <fieldset className="catalog-filter-group student-topic-filter">
                 <legend>Направления</legend>
                 <div className="catalog-filter-options">
@@ -97,7 +109,7 @@ export function StudentFilters({ topics, query, selectedTopics }: { topics: Topi
               </fieldset>
 
               <div className="catalog-filter-actions">
-                <Link className="button secondary" href="/students" onClick={() => setOpen(false)}>Сбросить</Link>
+                <Link className="button secondary" href={query ? `/students?q=${encodeURIComponent(query)}` : "/students"} onClick={() => setOpen(false)}>Сбросить</Link>
                 <button className="button" type="submit">Применить<Search aria-hidden="true" size={17} /></button>
               </div>
             </form>

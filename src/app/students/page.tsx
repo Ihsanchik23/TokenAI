@@ -30,7 +30,11 @@ export default async function StudentsPage({ searchParams }: PageProps<"/student
 
   return (
     <main className="page-shell community-page students-page">
-      <header className="community-heading"><h1>Студенты</h1></header>
+      <header className="community-heading"><h1>Сообщество</h1></header>
+      <nav className="secondary-nav community-tabs" aria-label="Раздел сообщества">
+        <Link className="active" href="/students" aria-current="page">Студенты</Link>
+        <Link href="/showcase">Работы</Link>
+      </nav>
       <StudentFilters key={[q, ...selectedTopics].join("|")} topics={(topicRows ?? []) as PublicTopic[]} query={q} selectedTopics={selectedTopics} />
       <div className="community-result-count"><span>Найдено</span><strong>{result.total}</strong></div>
       <section className="student-list" aria-label="Список студентов">{result.items.length ? result.items.map((student) => <StudentCard student={student} key={student.id} />) : <div className="community-empty"><span aria-hidden="true">0</span><h2>Профили не найдены</h2><p className="muted">Измените имя или выбранный интерес.</p><Link className="button secondary" href="/students">Сбросить фильтры</Link></div>}</section>
